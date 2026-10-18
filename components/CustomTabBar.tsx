@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../context/ThemeContext';
+import { safeNavigate } from '../services/navigation';
 
 export default function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const router = useRouter();
@@ -170,7 +171,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
               borderColor: colors.surface,
             },
           ]}
-          onPress={() => router.push('/trials/add')}
+          onPress={() => safeNavigate(() => router.push('/trials/add'))}
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Add trial"

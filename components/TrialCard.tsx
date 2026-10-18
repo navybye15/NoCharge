@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Trial, formatReadableDate, formatCurrency, getDaysLeft } from '../types/trial';
 import { useAppTheme } from '../context/ThemeContext';
+import { safeNavigate } from '../services/navigation';
 
 interface TrialCardProps {
   trial: Trial;
@@ -68,11 +69,13 @@ export default function TrialCard({ trial, cardWidth, onPress, onDelete }: Trial
   }
 
   const handlePress = () => {
-    if (onPress) {
-      onPress();
-    } else {
-      router.push(`/trials/${trial.id}` as any);
-    }
+    safeNavigate(() => {
+      if (onPress) {
+        onPress();
+      } else {
+        router.push(`/trials/${trial.id}` as any);
+      }
+    });
   };
 
   const handleLongPress = () => {
