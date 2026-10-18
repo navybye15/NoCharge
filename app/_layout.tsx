@@ -80,14 +80,10 @@ function RootLayoutNav() {
     return () => {
       // Cleanup listeners kapag nag-unmount ang component
       if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(
-          notificationListener.current
-        );
+        notificationListener.current.remove();
       }
       if (responseListener.current) {
-        Notifications.removeNotificationSubscription(
-          responseListener.current
-        );
+        responseListener.current.remove();
       }
     };
   }, []);
@@ -110,6 +106,13 @@ function RootLayoutNav() {
           name="notification-result"
           options={{
             title: 'Notification Clicked!',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="trials/add"
+          options={{
+            headerShown: false,
             presentation: 'modal',
           }}
         />

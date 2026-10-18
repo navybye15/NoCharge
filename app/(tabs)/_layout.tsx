@@ -1,43 +1,77 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Text, Platform } from 'react-native';
+import { Theme } from '../../constants/theme';
 
-// Simple tab layout for Phase 1 — dalawang tab lang muna:
-// 1. Test screen (for notification testing)
-// 2. Placeholder tab
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#2ECC71',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: Theme.colors.primary,
+        tabBarInactiveTintColor: Theme.colors.textMuted,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginBottom: 4,
+        },
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#E8F5E9',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 4,
+          backgroundColor: '#FFFFFF',
+          borderTopColor: Theme.colors.border,
+          borderTopWidth: 1,
+          height: Platform.OS === 'android' ? 64 : 60,
+          paddingBottom: 6,
+          paddingTop: 6,
+          elevation: 8,
         },
         headerStyle: {
-          backgroundColor: '#F0FFF4',
+          backgroundColor: Theme.colors.background,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderBottomWidth: 0,
         },
-        headerTintColor: '#1B5E20',
+        headerTitleStyle: {
+          fontWeight: '800',
+          fontSize: 18,
+          color: Theme.colors.textPrimary,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: '🔔 Test',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20 }}>🔔</Text>
+          title: 'Home',
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <Text style={{ fontSize: 22 }}>{focused ? '🏠' : '🏡'}</Text>
           ),
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="trials"
         options={{
-          title: 'ℹ️ Info',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20 }}>ℹ️</Text>
+          title: 'Trials',
+          headerTitle: 'My Free Trials',
+          tabBarIcon: ({ color, focused }) => (
+            <Text style={{ fontSize: 22 }}>💳</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          headerTitle: 'Charge Dates Calendar',
+          tabBarIcon: ({ color, focused }) => (
+            <Text style={{ fontSize: 22 }}>📅</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          headerTitle: 'Settings & Reminders',
+          tabBarIcon: ({ color, focused }) => (
+            <Text style={{ fontSize: 22 }}>⚙️</Text>
           ),
         }}
       />
