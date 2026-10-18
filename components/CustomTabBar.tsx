@@ -100,9 +100,10 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
         <View
           style={[
             styles.tabIconPill,
-            isFocused && {
-              backgroundColor: isDark ? 'rgba(50, 207, 122, 0.22)' : 'rgba(50, 207, 122, 0.22)',
-            },
+            isFocused && [
+              styles.tabIconPillActive,
+              { backgroundColor: isDark ? 'rgba(50, 207, 122, 0.22)' : 'rgba(50, 207, 122, 0.22)' },
+            ],
           ]}
         >
           <Ionicons
@@ -208,12 +209,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tabIconPill: {
-    width: 54,
-    height: 32,
+    width: 48,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 17,
+    overflow: 'hidden',
     marginBottom: 2,
+  },
+  tabIconPillActive: {
+    borderRadius: 17,
+    overflow: 'hidden',
   },
   tabLabel: {
     fontSize: 11,

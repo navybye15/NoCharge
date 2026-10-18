@@ -201,7 +201,7 @@ export default function HomeScreen() {
                   accessibilityLabel="NoCharge logo"
                 />
               </View>
-              <View>
+              <View style={styles.brandTextCol}>
                 <Text style={[styles.brandTitle, { color: colors.text }]}>NoCharge</Text>
                 <Text style={[styles.brandSubtitle, { color: colors.textMuted }]}>
                   Trial Tracker
@@ -534,11 +534,16 @@ const styles = StyleSheet.create({
   brandCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingLeft: 8,
+    paddingRight: 18,
     paddingVertical: 6,
     borderRadius: 24,
     borderWidth: 1,
     gap: 10,
+  },
+  brandTextCol: {
+    paddingRight: 4,
+    justifyContent: 'center',
   },
   logoSquircle: {
     width: 40,
@@ -557,12 +562,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     fontFamily: 'Manrope_800ExtraBold',
-    letterSpacing: -0.3,
+    letterSpacing: -0.1,
+    includeFontPadding: false,
   },
   brandSubtitle: {
     fontSize: 11,
     fontWeight: '500',
     fontFamily: 'Manrope_500Medium',
+    includeFontPadding: false,
   },
   glassPill: {
     width: 44,
