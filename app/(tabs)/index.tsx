@@ -18,12 +18,13 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  SafeAreaView,
   Image,
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from '../../components/LinearGradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,11 +40,13 @@ const CAROUSEL_GAP = 12;
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useAppTheme();
   const [trials, setTrials] = useState<Trial[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selectedDayIdx, setSelectedDayIdx] = useState(new Date().getDay());
+  const carouselRef = useRef<ScrollView>(null);
 
   const loadData = useCallback(async () => {
     const list = await getTrials();
@@ -117,6 +120,7 @@ export default function HomeScreen() {
     sunday.setDate(now.getDate() - currDay);
 
     const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const fullLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const days = [];
 
     for (let i = 0; i < 7; i++) {
@@ -127,6 +131,7 @@ export default function HomeScreen() {
 
       days.push({
         dayName: labels[i],
+        fullDayName: fullLabels[i],
         dateNum: d.getDate(),
         isToday: i === currDay,
         hasTrialEnding,
@@ -136,12 +141,30 @@ export default function HomeScreen() {
     return days;
   }, [activeTrials]);
 
+  // Handle clicking a day in the week schedule
+  const handleSelectDay = (idx: number) => {
+    setSelectedDayIdx(idx);
+    const day = weekDays[idx];
+    if (day && day.hasTrialEnding) {
+      const matchIdx = activeSorted.findIndex((t) => t.endDate === day.isoStr);
+      if (matchIdx !== -1) {
+        carouselRef.current?.scrollTo({
+          x: matchIdx * (CAROUSEL_CARD_WIDTH + CAROUSEL_GAP),
+          animated: true,
+        });
+        setCarouselIndex(matchIdx);
+      }
+    }
+  };
+
+  const topInset = Math.max(insets.top, StatusBar.currentHeight || 0, 16) + 12;
+
   return (
     <LinearGradient
       colors={[colors.bgGradientStart, colors.bgGradientEnd]}
       style={styles.gradientContainer}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.container, { paddingTop: topInset }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -154,7 +177,7 @@ export default function HomeScreen() {
             />
           }
         >
-          {/* Top Bar: Bell + Shield Logo, Title, Translucent Glass Pill */}
+          {/* Top Bar: Squircle Logo + User/Brand Capsule & Frosted Bell (Image 5 style) */}
           <View style={styles.topBar}>
             <View style={styles.brandRow}>
               <View style={[styles.logoSquircle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -173,7 +196,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Glass Pill Bell Button (Section 6: glass allowed only on small pills over gradient) */}
+            {/* Glass Pill Bell Button */}
             <TouchableOpacity
               style={[
                 styles.glassPill,
@@ -194,7 +217,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Highlight Hero Card with LinearGradient (Section 3 & 6) */}
+          {/* Highlight Hero Card with LinearGradient (Inspired by Image 5) */}
           <LinearGradient
             colors={[colors.heroStart, colors.heroEnd]}
             start={{ x: 0, y: 0 }}
@@ -205,19 +228,21 @@ export default function HomeScreen() {
               <View style={styles.heroTextCol}>
                 <View style={styles.heroTagBadge}>
                   <Ionicons name="flash" size={12} color="#091B27" style={{ marginRight: 4 }} />
-                  <Text style={styles.heroTagText}>AT RISK IN 7 DAYS</Text>
+                  <Text style={styles.heroTagText}>
+                    {nearestTrial ? 'NEXT TO CHARGE' : 'ALL TRIALS SAFE'}
+                  </Text>
                 </View>
                 <Text
-                  style={styles.heroDisplayNumber}
+                  style={styles.heroDisplayTitle}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {formatCurrency(totalAtRisk7Days)}
+                  {nearestTrial ? nearestTrial.serviceName : 'No Charges Due'}
                 </Text>
                 <Text style={styles.heroSubtitle}>
                   {nearestTrial
-                    ? `Next: ${nearestTrial.serviceName} (${getDaysLeft(nearestTrial.endDate)}d left)`
-                    : 'No upcoming charges due 🎉'}
+                    ? `${formatCurrency(nearestTrial.priceAfterTrial)}/mo • Renews in ${getDaysLeft(nearestTrial.endDate)}d`
+                    : 'Tap + below to add and track a new trial'}
                 </Text>
               </View>
 
@@ -227,25 +252,26 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Split Stats: Active vs Estimated Saved (Section 10: always label estimated) */}
+            {/* Split Stats: Active Count vs Monthly Risk (Section 10) */}
             <View style={styles.splitStatRow}>
               <View style={styles.splitBox}>
-                <Text style={styles.splitLabel}>ACTIVE PLANS</Text>
+                <Text style={styles.splitLabel}>ACTIVE TRIALS</Text>
                 <Text style={styles.splitValue} numberOfLines={1} adjustsFontSizeToFit>
-                  {formatCurrency(totalActiveMonthly)}
+                  {activeTrials.length} {activeTrials.length === 1 ? 'Trial' : 'Trials'}
                 </Text>
               </View>
               <View style={styles.splitDivider} />
               <View style={styles.splitBox}>
-                <Text style={styles.splitLabel}>ESTIMATED SAVED</Text>
-                <Text style={styles.splitValueSaved} numberOfLines={1} adjustsFontSizeToFit>
-                  {formatCurrency(estimatedSaved)}
+                <Text style={styles.splitLabel}>TOTAL AT RISK</Text>
+                <Text style={styles.splitValueRisk} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatCurrency(totalActiveMonthly)}
+                  <Text style={styles.splitValueUnit}>/mo</Text>
                 </Text>
               </View>
             </View>
           </LinearGradient>
 
-          {/* Home Trial Carousel: "My Trials" Section (Section 6) */}
+          {/* Home Trial Carousel: "My Trials" Section */}
           <View style={styles.sectionHeader}>
             <View>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>My Trials</Text>
@@ -272,6 +298,7 @@ export default function HomeScreen() {
             <View>
               {/* Horizontal Snap Carousel */}
               <ScrollView
+                ref={carouselRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={CAROUSEL_CARD_WIDTH + CAROUSEL_GAP}
@@ -290,7 +317,7 @@ export default function HomeScreen() {
                   </View>
                 ))}
 
-                {/* Final "View All" Card (Section 6) */}
+                {/* Final "View All" Card */}
                 <TouchableOpacity
                   style={[
                     styles.viewAllCard,
@@ -340,10 +367,13 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Week Schedule Strip */}
+          {/* Week Schedule Strip with Interactive Trial Selector */}
           <View style={[styles.weekStripCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.weekStripHeader}>
-              <Text style={[styles.weekStripTitle, { color: colors.text }]}>This Week's Schedule</Text>
+              <View>
+                <Text style={[styles.weekStripTitle, { color: colors.text }]}>This Week's Schedule</Text>
+                <Text style={[styles.weekStripSub, { color: colors.textMuted }]}>Tap a day to inspect ending trials</Text>
+              </View>
               <TouchableOpacity onPress={() => router.push('/calendar')} activeOpacity={0.7}>
                 <Text style={[styles.calendarLink, { color: isDark ? colors.primary : colors.primaryStrong }]}>
                   Calendar →
@@ -365,7 +395,7 @@ export default function HomeScreen() {
                           : colors.surface2,
                       },
                     ]}
-                    onPress={() => setSelectedDayIdx(idx)}
+                    onPress={() => handleSelectDay(idx)}
                     activeOpacity={0.7}
                   >
                     <Text
@@ -400,12 +430,62 @@ export default function HomeScreen() {
                 );
               })}
             </View>
+
+            {/* Interactive Selected Day Breakdown */}
+            {(() => {
+              const selectedDay = weekDays[selectedDayIdx];
+              if (!selectedDay) return null;
+              const trialsOnDay = activeTrials.filter((t) => t.endDate === selectedDay.isoStr);
+
+              if (trialsOnDay.length > 0) {
+                return (
+                  <View style={styles.selectedDayPanel}>
+                    <View style={styles.selectedDayBadgeRow}>
+                      <View style={[styles.dayAlertDot, { backgroundColor: colors.danger }]} />
+                      <Text style={[styles.selectedDayLabel, { color: colors.text }]}>
+                        {selectedDay.isToday ? 'Today' : `${selectedDay.fullDayName}, ${selectedDay.isoStr}`}:
+                      </Text>
+                    </View>
+                    {trialsOnDay.map((t) => (
+                      <TouchableOpacity
+                        key={t.id}
+                        style={[
+                          styles.selectedDayTrialRow,
+                          { backgroundColor: colors.surface2, borderColor: colors.border },
+                        ]}
+                        onPress={() => router.push(`/trials/${t.id}`)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.selectedTrialLeft}>
+                          <Text style={[styles.selectedTrialName, { color: colors.text }]}>{t.serviceName}</Text>
+                          <Text style={[styles.selectedTrialSub, { color: colors.textMuted }]}>
+                            {formatCurrency(t.priceAfterTrial)}/mo • {t.paymentLabel || 'Card'}
+                          </Text>
+                        </View>
+                        <View style={[styles.manageBtn, { backgroundColor: colors.primary }]}>
+                          <Text style={[styles.manageBtnText, { color: colors.onPrimary }]}>Manage →</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                );
+              }
+
+              return (
+                <View style={[styles.selectedDayEmpty, { backgroundColor: colors.surface2 }]}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.selectedDayEmptyText, { color: colors.textMuted }]}>
+                    Walang trial na magcha-charge sa {selectedDay.fullDayName} (Ligtas)
+                  </Text>
+                </View>
+              );
+            })()}
           </View>
 
           {/* Bottom spacing for CustomTabBar + Raised Center Button (Section 5) */}
           <View style={{ height: 110 }} />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </LinearGradient>
   );
 }
@@ -414,12 +494,12 @@ const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
   },
-  safeArea: {
+  container: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
   },
   topBar: {
     flexDirection: 'row',
@@ -446,15 +526,15 @@ const styles = StyleSheet.create({
     height: 36,
   },
   brandTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Manrope_700Bold',
+    fontSize: 22,
+    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     letterSpacing: -0.4,
   },
   brandSubtitle: {
     fontSize: 12,
-    fontWeight: '400',
-    fontFamily: 'Manrope_400Regular',
+    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     marginTop: 1,
   },
   glassPill: {
@@ -475,7 +555,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   heroCard: {
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 20,
     marginBottom: 20,
     shadowColor: '#1DB86A',
@@ -511,20 +591,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_800ExtraBold',
     letterSpacing: 0.6,
   },
-  heroDisplayNumber: {
-    fontSize: 38,
-    lineHeight: 44,
+  heroDisplayTitle: {
+    fontSize: 30,
+    lineHeight: 36,
     fontWeight: '800',
     color: '#091B27',
     fontFamily: 'Manrope_800ExtraBold',
-    letterSpacing: -0.8,
+    letterSpacing: -0.6,
     marginBottom: 4,
   },
   heroSubtitle: {
     fontSize: 13,
     fontWeight: '600',
     color: '#091B27',
-    opacity: 0.85,
+    opacity: 0.88,
     fontFamily: 'Manrope_600SemiBold',
   },
   ringWrapper: {
@@ -563,11 +643,16 @@ const styles = StyleSheet.create({
     color: '#091B27',
     fontFamily: 'Manrope_800ExtraBold',
   },
-  splitValueSaved: {
+  splitValueRisk: {
     fontSize: 16,
     fontWeight: '800',
     color: '#091B27',
     fontFamily: 'Manrope_800ExtraBold',
+  },
+  splitValueUnit: {
+    fontSize: 11,
+    fontWeight: '600',
+    opacity: 0.8,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -653,6 +738,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Manrope_700Bold',
   },
+  weekStripSub: {
+    fontSize: 12,
+    fontFamily: 'Manrope_400Regular',
+    marginTop: 2,
+  },
   calendarLink: {
     fontSize: 12,
     fontWeight: '700',
@@ -661,6 +751,7 @@ const styles = StyleSheet.create({
   weekDaysRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
   dayPill: {
     flex: 1,
@@ -676,7 +767,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   dayNumber: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
     fontFamily: 'Manrope_800ExtraBold',
   },
@@ -685,6 +776,71 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     marginTop: 4,
+  },
+  selectedDayPanel: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(128, 128, 128, 0.15)',
+    gap: 8,
+  },
+  selectedDayBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dayAlertDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  selectedDayLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+  },
+  selectedDayTrialRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  selectedTrialLeft: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  selectedTrialName: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+    marginBottom: 2,
+  },
+  selectedTrialSub: {
+    fontSize: 12,
+    fontFamily: 'Manrope_500Medium',
+  },
+  manageBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  manageBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+  },
+  selectedDayEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 12,
+  },
+  selectedDayEmptyText: {
+    fontSize: 12,
+    fontFamily: 'Manrope_500Medium',
   },
   emptyCard: {
     borderRadius: 20,

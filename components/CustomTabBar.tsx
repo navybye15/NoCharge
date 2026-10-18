@@ -98,9 +98,9 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
       >
         <View
           style={[
-            styles.tabPill,
+            styles.tabIconPill,
             isFocused && {
-              backgroundColor: isDark ? 'rgba(50, 207, 122, 0.18)' : 'rgba(50, 207, 122, 0.20)',
+              backgroundColor: isDark ? 'rgba(50, 207, 122, 0.22)' : 'rgba(50, 207, 122, 0.22)',
             },
           ]}
         >
@@ -109,21 +109,21 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
             size={22}
             color={isFocused ? activeColor : inactiveColor}
           />
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            maxFontSizeMultiplier={1.15}
-            style={[
-              styles.tabLabel,
-              {
-                color: isFocused ? activeColor : inactiveColor,
-                fontFamily: isFocused ? 'Manrope_700Bold' : 'Manrope_500Medium',
-              },
-            ]}
-          >
-            {config.label}
-          </Text>
         </View>
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          maxFontSizeMultiplier={1.15}
+          style={[
+            styles.tabLabel,
+            {
+              color: isFocused ? activeColor : inactiveColor,
+              fontFamily: isFocused ? 'Manrope_700Bold' : 'Manrope_500Medium',
+            },
+          ]}
+        >
+          {config.label}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -206,16 +206,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabPill: {
+  tabIconPill: {
+    width: 54,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: 16,
+    marginBottom: 2,
   },
   tabLabel: {
-    fontSize: 10,
-    marginTop: 2,
+    fontSize: 11,
     letterSpacing: 0.1,
   },
   centerButtonSpacer: {

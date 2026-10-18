@@ -18,8 +18,9 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
-  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from '../../components/LinearGradient';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -116,18 +117,21 @@ export default function SettingsScreen() {
     );
   };
 
+  const insets = useSafeAreaInsets();
   const themeOptions: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
     { key: 'dark', label: 'Dark', icon: 'moon-outline' },
     { key: 'light', label: 'Light', icon: 'sunny-outline' },
   ];
 
+  const topInset = Math.max(insets.top, StatusBar.currentHeight || 0, 16) + 12;
+
   return (
     <LinearGradient
       colors={[colors.bgGradientStart, colors.bgGradientEnd]}
       style={styles.gradient}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.container, { paddingTop: topInset }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -461,7 +465,7 @@ export default function SettingsScreen() {
           {/* 110dp clearance for raised bottom tab bar */}
           <View style={{ height: 110 }} />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </LinearGradient>
   );
 }
@@ -470,12 +474,12 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  safeArea: {
+  container: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
   },
   header: {
     marginBottom: 16,

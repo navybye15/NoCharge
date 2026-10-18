@@ -18,9 +18,10 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  SafeAreaView,
   TextInput,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from '../../components/LinearGradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Trial, getDaysLeft, formatCurrency } from '../../types/trial';
@@ -31,6 +32,7 @@ import TrialCard from '../../components/TrialCard';
 type FilterType = 'all' | 'ending_soon' | 'cancelled';
 
 export default function TrialsScreen() {
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useAppTheme();
   const [trials, setTrials] = useState<Trial[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
@@ -87,33 +89,34 @@ export default function TrialsScreen() {
     return getDaysLeft(a.endDate) - getDaysLeft(b.endDate);
   });
 
+  const topInset = Math.max(insets.top, StatusBar.currentHeight || 0, 16) + 12;
+
   return (
     <LinearGradient
       colors={[colors.bgGradientStart, colors.bgGradientEnd]}
       style={styles.gradient}
     >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-              />
-            }
-          >
-            {/* Header Row */}
-            <View style={styles.header}>
-              <View style={styles.headerTitleCol}>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Trials</Text>
-                <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-                  Track charge dates and cancel on time.
-                </Text>
-              </View>
+      <View style={[styles.container, { paddingTop: topInset }]}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          {/* Header Row */}
+          <View style={styles.header}>
+            <View style={styles.headerTitleCol}>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>Trials</Text>
+              <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+                Track charge dates and cancel on time.
+              </Text>
+            </View>
 
               <TouchableOpacity
                 style={[
@@ -270,7 +273,6 @@ export default function TrialsScreen() {
             <View style={{ height: 110 }} />
           </ScrollView>
         </View>
-      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -279,15 +281,12 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-  },
   container: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
   },
   header: {
     flexDirection: 'row',

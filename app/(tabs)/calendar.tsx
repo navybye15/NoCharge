@@ -16,8 +16,9 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from '../../components/LinearGradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Trial, formatReadableDate } from '../../types/trial';
@@ -86,14 +87,16 @@ export default function CalendarScreen() {
     setCurrentDate(new Date(year, month + 1, 1));
   };
 
+  const insets = useSafeAreaInsets();
   const selectedTrials = trialsByDate[selectedDateStr] || [];
+  const topInset = Math.max(insets.top, StatusBar.currentHeight || 0, 16) + 12;
 
   return (
     <LinearGradient
       colors={[colors.bgGradientStart, colors.bgGradientEnd]}
       style={styles.gradient}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.container, { paddingTop: topInset }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -168,7 +171,7 @@ export default function CalendarScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Weekday Labels */}
+            {/* Weekday Labels (7 columns, 14.2857% each) */}
             <View style={styles.weekRow}>
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
                 <Text key={d} style={[styles.weekLabel, { color: colors.textMuted }]}>
@@ -177,11 +180,11 @@ export default function CalendarScreen() {
               ))}
             </View>
 
-            {/* Calendar Day Grid */}
+            {/* Calendar Day Grid (7 columns, 14.2857% each) */}
             <View style={styles.daysGrid}>
               {daysGrid.map((day, idx) => {
                 if (day === null) {
-                  return <View key={`empty-${idx}`} style={styles.dayCell} />;
+                  return <View key={`empty-${idx}`} style={styles.dayCellWrapper} />;
                 }
 
                 const mStr = String(month + 1).padStart(2, '0');
@@ -195,10 +198,7 @@ export default function CalendarScreen() {
                 return (
                   <TouchableOpacity
                     key={`day-${day}`}
-                    style={[
-                      styles.dayCell,
-                      isSelected && [styles.dayCellSelected, { backgroundColor: colors.accent }],
-                    ]}
+                    style={styles.dayCellWrapper}
                     onPress={() => setSelectedDateStr(cellDateStr)}
                     activeOpacity={0.7}
                     accessibilityRole="button"
@@ -207,15 +207,22 @@ export default function CalendarScreen() {
                       hasTrials ? `, ${cellTrials.length} trials due` : ''
                     }`}
                   >
-                    <Text
+                    <View
                       style={[
-                        styles.dayNumber,
-                        { color: isSelected ? colors.onAccent : colors.text },
-                        isSelected && styles.dayNumberSelected,
+                        styles.dayInner,
+                        isSelected && [styles.dayInnerSelected, { backgroundColor: colors.accent }],
                       ]}
                     >
-                      {day}
-                    </Text>
+                      <Text
+                        style={[
+                          styles.dayNumber,
+                          { color: isSelected ? colors.onAccent : colors.text },
+                          isSelected && styles.dayNumberSelected,
+                        ]}
+                      >
+                        {day}
+                      </Text>
+                    </View>
                     {hasTrials ? (
                       <View style={styles.dotsRow}>
                         {cellTrials.slice(0, 3).map((t, dotIdx) => (
@@ -225,7 +232,7 @@ export default function CalendarScreen() {
                               styles.dot,
                               {
                                 backgroundColor: isSelected
-                                  ? colors.onAccent
+                                  ? colors.accent
                                   : t.color || getServiceColor(t.serviceName),
                               },
                             ]}
@@ -233,7 +240,7 @@ export default function CalendarScreen() {
                         ))}
                       </View>
                     ) : (
-                      <View style={{ height: 4 }} />
+                      <View style={{ height: 5 }} />
                     )}
                   </TouchableOpacity>
                 );
@@ -280,9 +287,10 @@ export default function CalendarScreen() {
           )}
 
           {/* 110dp clearance for raised bottom tab bar */}
+          {/* 110dp clearance for raised bottom tab bar */}
           <View style={{ height: 110 }} />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </LinearGradient>
   );
 }
@@ -291,12 +299,12 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  safeArea: {
+  container: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
   },
   header: {
     marginBottom: 16,
@@ -353,11 +361,10 @@ const styles = StyleSheet.create({
   },
   weekRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 10,
   },
   weekLabel: {
-    width: 40,
+    width: '14.2857%',
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '700',
@@ -366,17 +373,23 @@ const styles = StyleSheet.create({
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
-  dayCell: {
-    width: 42,
+  dayCellWrapper: {
+    width: '14.2857%',
     height: 46,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
     marginVertical: 2,
   },
-  dayCellSelected: {
+  dayInner: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayInnerSelected: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
