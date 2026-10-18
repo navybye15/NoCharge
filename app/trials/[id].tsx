@@ -1,12 +1,6 @@
 // ============================================
 // NoCharge Trial Detail Screen
 // ============================================
-// Features:
-// - Big countdown display ("X days left" / "Tomorrow" / "Today")
-// - Big primary button: "Open cancel page" (opens in browser)
-// - Actions: "Cancelled na" & "Itutuloy ko" (Kept)
-// - Edit details & Delete with confirmation
-// - Reminder schedule info (offsets and notification status)
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -17,23 +11,25 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
-  SafeAreaView,
-  Share,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
   Trial,
   formatReadableDate,
   formatCurrency,
   getCountdownInfo,
-  getDaysLeft,
 } from '../../types/trial';
 import { getTrialById, updateTrial, deleteTrial, subscribeToTrials } from '../../services/storage';
-import { Theme } from '../../constants/theme';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function TrialDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { colors, isDark } = useAppTheme();
   const [trial, setTrial] = useState<Trial | null>(null);
 
   const loadTrial = async () => {
@@ -50,21 +46,22 @@ export default function TrialDetailScreen() {
 
   if (!trial) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 20 }]}>
         <View style={styles.notFoundContainer}>
-          <Text style={styles.notFoundText}>Trial not found or already deleted.</Text>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>Trial not found or deleted.</Text>
+          <TouchableOpacity
+            style={[styles.backBtn, { backgroundColor: colors.primary }]}
+            onPress={() => router.back()}
+          >
             <Text style={styles.backBtnText}>← Back to list</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const countdown = getCountdownInfo(trial.endDate);
-  const initial = trial.serviceName.trim().charAt(0).toUpperCase() || '?';
 
-  // Open cancel page link
   const handleOpenCancelPage = async () => {
     if (!trial.cancelLink) {
       Alert.alert(
@@ -90,59 +87,66 @@ export default function TrialDetailScreen() {
     }
   };
 
-  // Mark as Cancelled
   const handleMarkCancelled = async () => {
     Alert.alert(
-      'Cancelled na?',
-      `I-mark ba natin ang "${trial.serviceName}" bilang cancelled? Ika-cancel din ang lahat ng nakatakdang reminders para dito.`,
+      'Mark as Cancelled',
+      'Sigurado ka bang na-cancel mo na ito? Kakanselahin na ang lahat ng upcoming reminders at idadagdag ito sa iyong "Total Saved" tracker.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Oo, Cancelled na!',
+          text: 'Confirm Cancelled',
           onPress: async () => {
-            await updateTrial({ ...trial, status: 'cancelled' });
-            Alert.alert(
-              'Galing! 🎉',
-              `Na-save mo ang ${formatCurrency(trial.priceAfterTrial)}! Na-update na ang iyong Estimated Saved balance.`
-            );
+            const updated: Trial = {
+              ...trial,
+              status: 'cancelled',
+              updatedAt: new Date().toISOString(),
+            };
+            await updateTrial(updated);
+            setTrial(updated);
+            Alert.alert('Saved!', `Na-record na bilang Cancelled ang ${trial.serviceName}.`);
           },
         },
       ]
     );
   };
 
-  // Mark as Kept (Itutuloy ko)
   const handleMarkKept = async () => {
     Alert.alert(
-      'Itutuloy mo ang subscription?',
-      `Gusto mo bang ituloy ang "${trial.serviceName}" pagkatapos ng free trial? Ika-cancel ang reminders para hindi ka na maistorbo.`,
+      'Itutuloy ang Subscription',
+      'Itutuloy mo ba ang paid subscription pagkatapos ng trial?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Oo, Itutuloy ko',
+          text: 'Confirm Kept',
           onPress: async () => {
-            await updateTrial({ ...trial, status: 'kept' });
-            Alert.alert(
-              'Noted! 👍',
-              `Naka-mark na bilang Kept ang subscription. Matagumpay na na-cancel ang reminders.`
-            );
+            const updated: Trial = {
+              ...trial,
+              status: 'kept',
+              updatedAt: new Date().toISOString(),
+            };
+            await updateTrial(updated);
+            setTrial(updated);
           },
         },
       ]
     );
   };
 
-  // Reactivate trial if already cancelled/kept
   const handleReactivate = async () => {
-    await updateTrial({ ...trial, status: 'active' });
-    Alert.alert('Reactivated', 'Active na ulit ang trial at naka-schedule na ang reminders.');
+    const updated: Trial = {
+      ...trial,
+      status: 'active',
+      updatedAt: new Date().toISOString(),
+    };
+    await updateTrial(updated);
+    setTrial(updated);
+    Alert.alert('Re-activated', 'Naka-schedule na ulit ang reminders bago ang charge date.');
   };
 
-  // Delete trial
   const handleDelete = () => {
     Alert.alert(
       'Delete Trial',
-      `Sigurado ka bang gusto mong burahin nang tuluyan ang "${trial.serviceName}"?`,
+      `Sigurado ka bang gusto mong tanggalin ang "${trial.serviceName}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -161,64 +165,91 @@ export default function TrialDetailScreen() {
   const isKept = trial.status === 'kept';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 24) }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Navigation Bar */}
         <View style={styles.navBar}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.navBackBtn} activeOpacity={0.7}>
-            <Text style={styles.navBackText}>← Back</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.navBackBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
+            <Text style={[styles.navBackText, { color: colors.textPrimary }]}>Back</Text>
           </TouchableOpacity>
+
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity
               onPress={() => router.push(`/trials/add?editId=${trial.id}` as any)}
-              style={styles.navEditBtn}
+              style={[styles.navEditBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
               activeOpacity={0.7}
             >
-              <Text style={styles.navEditText}>✏️ Edit</Text>
+              <Ionicons name="create-outline" size={16} color={colors.primary} />
+              <Text style={[styles.navEditText, { color: colors.primary }]}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDelete} style={styles.navDeleteBtn} activeOpacity={0.7}>
-              <Text style={styles.navDeleteText}>Delete</Text>
+            <TouchableOpacity
+              onPress={handleDelete}
+              style={[styles.navDeleteBtn, { backgroundColor: colors.urgentBg }]}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.urgent} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Big Countdown Hero Card */}
-        <View style={styles.heroCard}>
-          <View style={[styles.avatarCircle, { backgroundColor: trial.color || Theme.colors.primary }]}>
-            <Text style={styles.avatarText}>{initial}</Text>
+        {/* Hero Card */}
+        <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.avatarCircle, { backgroundColor: colors.iconContainer, borderColor: colors.borderLight }]}>
+            <Ionicons name="card-outline" size={32} color={colors.iconColor} />
           </View>
 
-          <Text style={styles.serviceName}>{trial.serviceName}</Text>
+          <Text style={[styles.serviceName, { color: colors.textPrimary }]}>{trial.serviceName}</Text>
 
           {/* Status badge */}
           {isCancelled ? (
-            <View style={[styles.statusBadge, { backgroundColor: Theme.colors.cancelledBg }]}>
-              <Text style={[styles.statusBadgeText, { color: Theme.colors.cancelled }]}>
-                🚫 CANCELLED
-              </Text>
+            <View style={[styles.statusBadge, { backgroundColor: colors.cancelledBg }]}>
+              <Ionicons name="close-circle-outline" size={14} color={colors.cancelled} style={{ marginRight: 4 }} />
+              <Text style={[styles.statusBadgeText, { color: colors.cancelled }]}>CANCELLED</Text>
             </View>
           ) : isKept ? (
-            <View style={[styles.statusBadge, { backgroundColor: Theme.colors.keptBg }]}>
-              <Text style={[styles.statusBadgeText, { color: Theme.colors.kept }]}>
-                ✅ PLAN KEPT (SUBSCRIBED)
-              </Text>
+            <View style={[styles.statusBadge, { backgroundColor: colors.keptBg }]}>
+              <Ionicons name="checkmark-circle-outline" size={14} color={colors.kept} style={{ marginRight: 4 }} />
+              <Text style={[styles.statusBadgeText, { color: colors.kept }]}>KEPT (SUBSCRIBED)</Text>
             </View>
           ) : (
-            <View style={[styles.statusBadge, { backgroundColor: countdown.bgColor }]}>
-              <Text style={[styles.statusBadgeText, { color: countdown.color }]}>
-                ⏳ {countdown.label.toUpperCase()}
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: countdown.isUrgent ? colors.urgentBg : colors.primaryLight },
+              ]}
+            >
+              <Ionicons
+                name="time-outline"
+                size={14}
+                color={countdown.isUrgent ? colors.urgent : colors.primary}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  { color: countdown.isUrgent ? colors.urgent : colors.primary },
+                ]}
+              >
+                {countdown.label.toUpperCase()}
               </Text>
             </View>
           )}
 
           {/* Big price display */}
           <View style={styles.priceHeroRow}>
-            <Text style={styles.priceHero}>{formatCurrency(trial.priceAfterTrial)}</Text>
-            <Text style={styles.cycleHero}>
+            <Text style={[styles.priceHero, { color: colors.textPrimary }]}>
+              {formatCurrency(trial.priceAfterTrial)}
+            </Text>
+            <Text style={[styles.cycleHero, { color: colors.textMuted }]}>
               {trial.billingCycle === 'monthly' ? ' / month' : trial.billingCycle === 'yearly' ? ' / year' : ' one-time'}
             </Text>
           </View>
-          <Text style={styles.chargeNotice}>
+          <Text style={[styles.chargeNotice, { color: colors.textSecondary }]}>
             {isCancelled
               ? 'No charges will be made. You cancelled this trial.'
               : isKept
@@ -229,87 +260,105 @@ export default function TrialDetailScreen() {
 
         {/* Primary Action Button: Open Cancel Page */}
         <TouchableOpacity
-          style={[styles.primaryCancelPageBtn, !trial.cancelLink && styles.btnDisabled]}
+          style={[
+            styles.primaryCancelPageBtn,
+            { backgroundColor: trial.cancelLink ? colors.primary : colors.surfaceSubtle },
+            !trial.cancelLink && { borderColor: colors.border, borderWidth: 1 },
+          ]}
           onPress={handleOpenCancelPage}
           activeOpacity={0.8}
         >
-          <Text style={styles.primaryCancelPageText}>
-            {trial.cancelLink ? '🌐 Open Cancel Page' : '🔗 No Cancel Link Added'}
+          <Ionicons
+            name={trial.cancelLink ? 'open-outline' : 'link-outline'}
+            size={18}
+            color={trial.cancelLink ? '#FFFFFF' : colors.textMuted}
+            style={{ marginRight: 8 }}
+          />
+          <Text
+            style={[
+              styles.primaryCancelPageText,
+              { color: trial.cancelLink ? '#FFFFFF' : colors.textMuted },
+            ]}
+          >
+            {trial.cancelLink ? 'Open Cancel Page' : 'No Cancel Link Added'}
           </Text>
         </TouchableOpacity>
 
-        {/* Two Status Decision Buttons */}
+        {/* Decision Buttons */}
         {!isCancelled && !isKept ? (
           <View style={styles.decisionRow}>
             <TouchableOpacity
-              style={[styles.decisionBtn, styles.cancelledBtn]}
+              style={[styles.decisionBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
               onPress={handleMarkCancelled}
               activeOpacity={0.8}
             >
-              <Text style={styles.cancelledBtnText}>🚫 Cancelled na</Text>
+              <Ionicons name="close-circle-outline" size={17} color={colors.urgent} style={{ marginRight: 6 }} />
+              <Text style={[styles.decisionBtnText, { color: colors.urgent }]}>Cancelled na</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.decisionBtn, styles.keptBtn]}
+              style={[styles.decisionBtn, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
               onPress={handleMarkKept}
               activeOpacity={0.8}
             >
-              <Text style={styles.keptBtnText}>👍 Itutuloy ko</Text>
+              <Ionicons name="checkmark-circle-outline" size={17} color={colors.primary} style={{ marginRight: 6 }} />
+              <Text style={[styles.decisionBtnText, { color: colors.primary }]}>Itutuloy ko</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity
-            style={styles.reactivateBtn}
+            style={[styles.reactivateBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={handleReactivate}
             activeOpacity={0.8}
           >
-            <Text style={styles.reactivateBtnText}>🔄 Re-activate Reminders</Text>
+            <Ionicons name="refresh-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.reactivateBtnText, { color: colors.primary }]}>Re-activate Reminders</Text>
           </TouchableOpacity>
         )}
 
         {/* Details Card */}
-        <View style={styles.detailsCard}>
-          <Text style={styles.detailsSectionTitle}>SUBSCRIPTION DETAILS</Text>
+        <View style={[styles.detailsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.detailsSectionTitle, { color: colors.textMuted }]}>SUBSCRIPTION DETAILS</Text>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Charge Date</Text>
-            <Text style={styles.detailValue}>{formatReadableDate(trial.endDate)}</Text>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Charge Date</Text>
+            <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{formatReadableDate(trial.endDate)}</Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
 
           {trial.startDate ? (
             <>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Started On</Text>
-                <Text style={styles.detailValue}>{formatReadableDate(trial.startDate)}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Started On</Text>
+                <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{formatReadableDate(trial.startDate)}</Text>
               </View>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
             </>
           ) : null}
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Payment Method</Text>
-            <Text style={styles.detailValue}>{trial.paymentLabel || 'Not specified'}</Text>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Payment Method</Text>
+            <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{trial.paymentLabel || 'Not specified'}</Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Reminders Scheduled</Text>
-            <Text style={styles.detailValue}>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Reminders Scheduled</Text>
+            <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
               {trial.status === 'active'
-                ? `${trial.reminderOffsetsDays?.length || 0} alerts (3d, 1d, 0d)`
+                ? `${trial.reminderOffsetsDays?.length || 3} alerts (3d, 1d, 0d)`
                 : 'Turned off (Not active)'}
             </Text>
           </View>
 
           {trial.notes ? (
             <>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
               <View style={[styles.detailRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
-                <Text style={[styles.detailLabel, { marginBottom: 4 }]}>Notes</Text>
-                <Text style={styles.notesText}>{trial.notes}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textSecondary, marginBottom: 4 }]}>Notes</Text>
+                <Text style={[styles.notesText, { color: colors.textPrimary }]}>{trial.notes}</Text>
               </View>
             </>
           ) : null}
@@ -317,251 +366,210 @@ export default function TrialDetailScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
   },
   scrollContent: {
-    paddingHorizontal: Theme.spacing.lg,
-    paddingTop: Theme.spacing.sm,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  notFoundContainer: {
+    padding: 30,
+    alignItems: 'center',
+  },
+  notFoundText: {
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  backBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  backBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   navBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Theme.spacing.md,
+    marginBottom: 18,
+    paddingTop: 4,
   },
   navBackBtn: {
-    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: Theme.radius.full,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
+    gap: 4,
   },
   navBackText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: Theme.colors.textPrimary,
   },
   navEditBtn: {
-    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    backgroundColor: '#EFF6FF',
-    borderRadius: Theme.radius.full,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 4,
   },
   navEditText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#2563EB',
   },
   navDeleteBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: '#FEE2E2',
-    borderRadius: Theme.radius.full,
-  },
-  navDeleteText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#EF4444',
-  },
-
-  /* Hero Card */
-  heroCard: {
-    backgroundColor: Theme.colors.surface,
-    borderRadius: Theme.radius.xl,
-    padding: Theme.spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    ...Theme.shadows.card,
-    marginBottom: Theme.spacing.lg,
-  },
-  avatarCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Theme.spacing.md,
   },
-  avatarText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
+  heroCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatarCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   serviceName: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: Theme.colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.4,
     marginBottom: 8,
     textAlign: 'center',
   },
   statusBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: Theme.radius.full,
-    marginBottom: Theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 9999,
+    marginBottom: 16,
   },
   statusBadgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   priceHeroRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginTop: 4,
+    marginBottom: 6,
   },
   priceHero: {
-    fontSize: 34,
-    fontWeight: '900',
-    color: Theme.colors.textPrimary,
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -0.6,
   },
   cycleHero: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Theme.colors.textSecondary,
+    fontWeight: '500',
     marginLeft: 4,
   },
   chargeNotice: {
     fontSize: 12,
-    color: Theme.colors.textSecondary,
-    marginTop: 8,
+    fontWeight: '500',
     textAlign: 'center',
   },
-
-  /* Primary Action Button */
   primaryCancelPageBtn: {
-    backgroundColor: Theme.colors.primary,
-    paddingVertical: 16,
-    borderRadius: Theme.radius.lg,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Theme.spacing.md,
-    ...Theme.shadows.floating,
-  },
-  btnDisabled: {
-    backgroundColor: '#94A3B8',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#00C06A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   primaryCancelPageText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
   },
-
-  /* Decision Action Buttons */
   decisionRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: Theme.spacing.lg,
+    marginBottom: 16,
   },
   decisionBtn: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: Theme.radius.lg,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: 14,
     borderWidth: 1,
   },
-  cancelledBtn: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#EF4444',
-  },
-  cancelledBtnText: {
-    color: '#EF4444',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  keptBtn: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#3B82F6',
-  },
-  keptBtnText: {
-    color: '#3B82F6',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  reactivateBtn: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: Theme.colors.primary,
-    paddingVertical: 12,
-    borderRadius: Theme.radius.md,
-    alignItems: 'center',
-    marginBottom: Theme.spacing.lg,
-  },
-  reactivateBtnText: {
-    color: Theme.colors.primaryDark,
+  decisionBtnText: {
     fontSize: 14,
     fontWeight: '700',
   },
-
-  /* Details Card */
-  detailsCard: {
-    backgroundColor: Theme.colors.surface,
-    borderRadius: Theme.radius.xl,
-    padding: Theme.spacing.lg,
+  reactivateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: Theme.colors.border,
-    ...Theme.shadows.card,
+    marginBottom: 16,
+  },
+  reactivateBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  detailsCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 18,
   },
   detailsSectionTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: Theme.colors.textSecondary,
     letterSpacing: 0.8,
-    marginBottom: Theme.spacing.md,
+    marginBottom: 14,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   detailLabel: {
     fontSize: 13,
-    color: Theme.colors.textSecondary,
     fontWeight: '500',
   },
   detailValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: Theme.colors.textPrimary,
-  },
-  notesText: {
-    fontSize: 13,
-    color: Theme.colors.textPrimary,
-    lineHeight: 18,
   },
   divider: {
     height: 1,
-    backgroundColor: Theme.colors.borderLight,
-    marginVertical: 10,
+    marginVertical: 8,
   },
-  notFoundContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  notFoundText: {
-    fontSize: 16,
-    color: Theme.colors.textSecondary,
-    marginBottom: 16,
-  },
-  backBtn: {
-    backgroundColor: Theme.colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: Theme.radius.md,
-  },
-  backBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+  notesText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

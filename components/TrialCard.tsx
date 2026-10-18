@@ -1,15 +1,16 @@
 // ============================================
-// Cashtra-Style Wallet Trial Card Component
+// NoCharge Sleek Fintech Trial Card Component
 // ============================================
-// Signature Cashtra stacked wallet card design:
-// Rich colored cards, initial badge, payment method tag,
-// bold ₱ amount, and countdown badge.
+// Professional, non-slop card inspired by Cashtra:
+// Monochromatic theme-tinted icon container (green in light & dark mode),
+// crisp typography, payment label, bold ₱ amount, and clean countdown badge.
 
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Trial, formatReadableDate, formatCurrency, getCountdownInfo } from '../types/trial';
-import { Theme } from '../constants/theme';
+import { useAppTheme } from '../context/ThemeContext';
 
 interface TrialCardProps {
   trial: Trial;
@@ -17,10 +18,37 @@ interface TrialCardProps {
   onDelete?: (id: string) => void;
 }
 
+/**
+ * Returns a tasteful vector icon name tailored to the subscription name
+ */
+function getServiceIconName(name: string): keyof typeof Ionicons.glyphMap {
+  const lower = name.toLowerCase();
+  if (lower.includes('netflix') || lower.includes('disney') || lower.includes('hbo') || lower.includes('prime') || lower.includes('tv')) {
+    return 'film-outline';
+  }
+  if (lower.includes('spotify') || lower.includes('apple music') || lower.includes('youtube music') || lower.includes('audio')) {
+    return 'musical-notes-outline';
+  }
+  if (lower.includes('youtube') || lower.includes('video') || lower.includes('twitch')) {
+    return 'play-outline';
+  }
+  if (lower.includes('claude') || lower.includes('chatgpt') || lower.includes('ai') || lower.includes('openai') || lower.includes('gemini')) {
+    return 'sparkles-outline';
+  }
+  if (lower.includes('cloud') || lower.includes('drive') || lower.includes('dropbox') || lower.includes('icloud')) {
+    return 'cloud-outline';
+  }
+  if (lower.includes('canva') || lower.includes('adobe') || lower.includes('figma') || lower.includes('photo')) {
+    return 'color-palette-outline';
+  }
+  return 'card-outline';
+}
+
 export default function TrialCard({ trial, onPress, onDelete }: TrialCardProps) {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const countdown = getCountdownInfo(trial.endDate);
-  const initial = trial.serviceName.trim().charAt(0).toUpperCase() || '?';
+  const iconName = getServiceIconName(trial.serviceName);
 
   const handlePress = () => {
     if (onPress) {
@@ -49,88 +77,108 @@ export default function TrialCard({ trial, onPress, onDelete }: TrialCardProps) 
   const isCancelled = trial.status === 'cancelled';
   const isKept = trial.status === 'kept';
 
-  // Card color background (Cashtra signature style)
-  const cardColor = isCancelled ? '#64748B' : trial.color || Theme.colors.primary;
+  // Badge colors based on urgency
+  let badgeBg = colors.safeBg;
+  let badgeText = colors.safe;
+  let badgeIcon: keyof typeof Ionicons.glyphMap = 'time-outline';
+
+  if (isCancelled) {
+    badgeBg = colors.cancelledBg;
+    badgeText = colors.cancelled;
+    badgeIcon = 'close-circle-outline';
+  } else if (isKept) {
+    badgeBg = colors.keptBg;
+    badgeText = colors.kept;
+    badgeIcon = 'checkmark-circle-outline';
+  } else if (countdown.isUrgent) {
+    badgeBg = colors.urgentBg;
+    badgeText = colors.urgent;
+    badgeIcon = 'alert-circle-outline';
+  } else if (countdown.daysLeft <= 7) {
+    badgeBg = colors.warningBg;
+    badgeText = colors.warning;
+    badgeIcon = 'time-outline';
+  }
 
   return (
     <TouchableOpacity
       style={[
-        styles.walletCard,
-        { backgroundColor: cardColor },
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        },
         isCancelled && styles.cardCancelled,
       ]}
       onPress={handlePress}
       onLongPress={handleLongPress}
-      activeOpacity={0.85}
+      activeOpacity={0.7}
     >
-      {/* Background card texture/shading for depth */}
-      <View style={styles.cardShine} />
-
-      <View style={styles.cardContent}>
-        {/* Top Row: Service info and Price */}
-        <View style={styles.topRow}>
-          {/* Service Initial Badge */}
-          <View style={styles.iconBadge}>
-            <Text style={styles.iconInitial}>{initial}</Text>
-          </View>
-
-          {/* Name & Payment label */}
-          <View style={styles.nameCol}>
-            <Text
-              style={[styles.serviceName, isCancelled && styles.textStrikethrough]}
-              numberOfLines={1}
-            >
-              {trial.serviceName}
-            </Text>
-            <Text style={styles.paymentSub}>
-              {trial.paymentLabel ? `${trial.paymentLabel.toUpperCase()} • ` : ''}
-              {trial.billingCycle ? trial.billingCycle.toUpperCase() : 'MONTHLY'}
-            </Text>
-          </View>
-
-          {/* Price */}
-          <View style={styles.priceCol}>
-            <Text style={styles.priceAmount}>{formatCurrency(trial.priceAfterTrial)}</Text>
-            <Text style={styles.priceCycle}>
-              {trial.billingCycle === 'monthly' ? '/ mo' : trial.billingCycle === 'yearly' ? '/ yr' : 'once'}
-            </Text>
-          </View>
+      <View style={styles.topRow}>
+        {/* Themed Monochromatic Icon Squircle (Matching user Cashtra green theme) */}
+        <View
+          style={[
+            styles.iconSquircle,
+            {
+              backgroundColor: isCancelled ? colors.iconContainerMuted : colors.iconContainer,
+              borderColor: colors.borderLight,
+            },
+          ]}
+        >
+          <Ionicons
+            name={iconName}
+            size={22}
+            color={isCancelled ? colors.textMuted : colors.iconColor}
+          />
         </View>
 
-        {/* Bottom Row: Countdown Pill & Deadline Date */}
-        <View style={styles.bottomRow}>
-          <View style={styles.dateInfo}>
-            <Text style={styles.dateLabel}>
-              Charge date: <Text style={styles.dateBold}>{formatReadableDate(trial.endDate)}</Text>
-            </Text>
-          </View>
+        {/* Subscription Info */}
+        <View style={styles.infoCol}>
+          <Text
+            style={[
+              styles.serviceName,
+              { color: colors.textPrimary },
+              isCancelled && styles.textStrikethrough,
+            ]}
+            numberOfLines={1}
+          >
+            {trial.serviceName}
+          </Text>
+          <Text style={[styles.subLabel, { color: colors.textSecondary }]}>
+            {trial.paymentLabel ? `${trial.paymentLabel.toUpperCase()} • ` : ''}
+            {trial.billingCycle ? trial.billingCycle.toUpperCase() : 'MONTHLY'}
+          </Text>
+        </View>
 
-          {/* Status Chip */}
-          {isCancelled ? (
-            <View style={[styles.chip, styles.chipCancelled]}>
-              <Text style={styles.chipTextCancelled}>🚫 CANCELLED</Text>
-            </View>
-          ) : isKept ? (
-            <View style={[styles.chip, styles.chipKept]}>
-              <Text style={styles.chipTextKept}>✅ KEPT</Text>
-            </View>
-          ) : (
-            <View
-              style={[
-                styles.chip,
-                countdown.isUrgent ? styles.chipUrgent : countdown.isWarning ? styles.chipWarning : styles.chipSafe,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  countdown.isUrgent ? styles.chipTextUrgent : countdown.isWarning ? styles.chipTextWarning : styles.chipTextSafe,
-                ]}
-              >
-                ⏳ {countdown.label}
-              </Text>
-            </View>
-          )}
+        {/* Price Column */}
+        <View style={styles.priceCol}>
+          <Text style={[styles.priceAmount, { color: colors.textPrimary }]}>
+            {formatCurrency(trial.priceAfterTrial)}
+          </Text>
+          <Text style={[styles.priceCycle, { color: colors.textMuted }]}>
+            {trial.billingCycle === 'monthly' ? '/ mo' : trial.billingCycle === 'yearly' ? '/ yr' : 'once'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Divider */}
+      <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+
+      {/* Bottom Row: Due date & Countdown pill */}
+      <View style={styles.bottomRow}>
+        <View style={styles.dueDateRow}>
+          <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+          <Text style={[styles.dueDateText, { color: colors.textMuted }]}>
+            Due {formatReadableDate(trial.endDate)}
+          </Text>
+        </View>
+
+        {/* Status / Countdown Badge */}
+        <View style={[styles.badge, { backgroundColor: badgeBg }]}>
+          <Ionicons name={badgeIcon} size={13} color={badgeText} style={{ marginRight: 4 }} />
+          <Text style={[styles.badgeText, { color: badgeText }]}>
+            {isCancelled ? 'Cancelled' : isKept ? 'Kept' : countdown.label}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -138,143 +186,93 @@ export default function TrialCard({ trial, onPress, onDelete }: TrialCardProps) 
 }
 
 const styles = StyleSheet.create({
-  walletCard: {
-    borderRadius: Theme.radius.lg,
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
     marginBottom: 12,
-    position: 'relative',
-    overflow: 'hidden',
-    ...Theme.shadows.walletCard,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   cardCancelled: {
-    opacity: 0.75,
-  },
-  cardShine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  cardContent: {
-    padding: 16,
+    opacity: 0.65,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
   },
-  iconBadge: {
+  iconSquircle: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    borderRadius: 14,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
-  iconInitial: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  nameCol: {
+  infoCol: {
     flex: 1,
+    justifyContent: 'center',
   },
   serviceName: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
-  },
-  textStrikethrough: {
-    textDecorationLine: 'line-through',
-    opacity: 0.8,
-  },
-  paymentSub: {
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.75)',
-    letterSpacing: 0.6,
-    marginTop: 2,
+    letterSpacing: -0.2,
+    marginBottom: 3,
+  },
+  subLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.4,
   },
   priceCol: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   priceAmount: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '800',
     letterSpacing: -0.3,
   },
   priceCycle: {
     fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.75)',
+    fontWeight: '500',
+    marginTop: 1,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 12,
   },
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.18)',
   },
-  dateInfo: {
-    flex: 1,
+  dueDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
-  dateLabel: {
+  dueDateText: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '500',
   },
-  dateBold: {
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  chip: {
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Theme.radius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingVertical: 4,
+    borderRadius: 9999,
   },
-  chipText: {
+  badgeText: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
-  chipUrgent: {
-    backgroundColor: '#FEF2F2',
-  },
-  chipTextUrgent: {
-    color: '#DC2626',
-  },
-  chipWarning: {
-    backgroundColor: '#FFFBEB',
-  },
-  chipTextWarning: {
-    color: '#B45309',
-  },
-  chipSafe: {
-    backgroundColor: '#ECFDF5',
-  },
-  chipTextSafe: {
-    color: '#047857',
-  },
-  chipCancelled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  chipTextCancelled: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  chipKept: {
-    backgroundColor: '#DBEAFE',
-  },
-  chipTextKept: {
-    color: '#1D4ED8',
-    fontSize: 10,
-    fontWeight: '800',
+  textStrikethrough: {
+    textDecorationLine: 'line-through',
   },
 });

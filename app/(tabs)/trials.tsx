@@ -1,12 +1,6 @@
 // ============================================
 // NoCharge Cashtra Accounts-Style Trials Screen
 // ============================================
-// Features:
-// - Cashtra Accounts header with search & add action
-// - Total Active Subscriptions balance card
-// - Cashtra horizontal filter pills [All | Ending Soon | Cancelled | Kept]
-// - Stack of colorful wallet cards
-// - Floating + action button
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -20,9 +14,10 @@ import {
   TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Trial, getDaysLeft, formatCurrency } from '../../types/trial';
 import { getTrials, deleteTrial, subscribeToTrials } from '../../services/storage';
-import { Theme } from '../../constants/theme';
+import { useAppTheme } from '../../context/ThemeContext';
 import TrialCard from '../../components/TrialCard';
 import FloatingAddButton from '../../components/FloatingAddButton';
 
@@ -30,6 +25,7 @@ type FilterType = 'all' | 'ending_soon' | 'cancelled' | 'kept';
 
 export default function TrialsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const [trials, setTrials] = useState<Trial[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,7 +60,6 @@ export default function TrialsScreen() {
 
   // Filter & sort logic
   const filteredTrials = trials.filter((t) => {
-    // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = t.serviceName.toLowerCase().includes(q);
@@ -82,16 +77,15 @@ export default function TrialsScreen() {
       const days = getDaysLeft(t.endDate);
       return t.status === 'active' && days >= 0 && days <= 7;
     }
-    return true; // 'all'
+    return true;
   });
 
-  // Sort by nearest deadline
   const sortedTrials = [...filteredTrials].sort((a, b) => {
     return getDaysLeft(a.endDate) - getDaysLeft(b.endDate);
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -100,74 +94,75 @@ export default function TrialsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[Theme.colors.primary]}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
             />
           }
         >
-          {/* Cashtra Accounts Header */}
+          {/* Header Row */}
           <View style={styles.cashtraHeader}>
             <View style={styles.headerTitleCol}>
-              <Text style={styles.headerTitle}>Trials</Text>
-              <Text style={styles.headerSubtitle}>
-                Manage free trials, charge dates, and subscriptions.
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Trials</Text>
+              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+                Track charge dates and cancel on time.
               </Text>
             </View>
 
-            {/* Quick Actions (Search & Add) */}
             <View style={styles.headerActionsRow}>
               <TouchableOpacity
-                style={styles.headerIconBtn}
+                style={[styles.headerIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setShowSearch(!showSearch)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.headerIconText}>🔍</Text>
+                <Ionicons name="search-outline" size={18} color={colors.textPrimary} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.headerIconBtn, styles.headerAddBtn]}
+                style={[styles.headerIconBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                 onPress={() => router.push('/trials/add')}
                 activeOpacity={0.7}
               >
-                <Text style={styles.headerAddIconText}>+</Text>
+                <Ionicons name="add" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Search Bar Input (toggleable) */}
+          {/* Search Bar Input */}
           {showSearch ? (
-            <View style={styles.searchBarWrapper}>
+            <View style={[styles.searchBarWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="search-outline" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
-                style={styles.searchInput}
-                placeholder="Search trial or payment method..."
-                placeholderTextColor={Theme.colors.textMuted}
+                style={[styles.searchInput, { color: colors.textPrimary }]}
+                placeholder="Search trial or payment card..."
+                placeholderTextColor={colors.textMuted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoFocus
               />
               {searchQuery ? (
                 <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
-                  <Text style={styles.clearBtnText}>✕</Text>
+                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               ) : null}
             </View>
           ) : null}
 
           {/* Cashtra Total Balance Card */}
-          <View style={styles.totalBalanceCard}>
-            <View style={styles.totalBalanceIconWrapper}>
-              <Text style={styles.totalBalanceIcon}>💳</Text>
+          <View style={[styles.totalBalanceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.totalBalanceIconWrapper, { backgroundColor: colors.iconContainer, borderColor: colors.borderLight }]}>
+              <Ionicons name="card-outline" size={22} color={colors.iconColor} />
             </View>
             <View style={styles.totalBalanceTextCol}>
-              <Text style={styles.totalBalanceLabel}>Total Active Monthly</Text>
-              <Text style={styles.totalBalanceAmount}>{formatCurrency(totalActivePrice)}</Text>
+              <Text style={[styles.totalBalanceLabel, { color: colors.textSecondary }]}>Active Plans Total</Text>
+              <Text style={[styles.totalBalanceAmount, { color: colors.textPrimary }]}>{formatCurrency(totalActivePrice)}</Text>
             </View>
-            <View style={styles.totalBadge}>
-              <Text style={styles.totalBadgeText}>{activeTrials.length} Trials</Text>
+            <View style={[styles.totalBadge, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[styles.totalBadgeText, { color: colors.primary }]}>{activeTrials.length} active</Text>
             </View>
           </View>
 
-          {/* Cashtra Filter Pills (All | Ending Soon | Cancelled | Kept) */}
+          {/* Filter Pills */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionLabel}>TRIALS FILTER</Text>
+            <Text style={[styles.filterSectionLabel, { color: colors.textMuted }]}>FILTER</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -183,14 +178,24 @@ export default function TrialsScreen() {
                 return (
                   <TouchableOpacity
                     key={tab.key}
-                    style={[styles.filterPill, isActive && styles.filterPillActive]}
+                    style={[
+                      styles.filterPill,
+                      {
+                        backgroundColor: isActive
+                          ? colors.primary
+                          : isDark
+                          ? colors.surfaceElevated
+                          : colors.surface,
+                        borderColor: isActive ? colors.primary : colors.border,
+                      },
+                    ]}
                     onPress={() => setFilter(tab.key as FilterType)}
                     activeOpacity={0.7}
                   >
                     <Text
                       style={[
                         styles.filterPillText,
-                        isActive && styles.filterPillTextActive,
+                        { color: isActive ? '#FFFFFF' : colors.textSecondary },
                       ]}
                     >
                       {tab.label}
@@ -201,36 +206,28 @@ export default function TrialsScreen() {
             </ScrollView>
           </View>
 
-          {/* Cashtra Stacked Cards List */}
-          <View style={styles.cardsList}>
-            {sortedTrials.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyEmoji}>🔎</Text>
-                <Text style={styles.emptyTitle}>Walang trials dito</Text>
-                <Text style={styles.emptySubtitle}>
-                  {filter === 'cancelled'
-                    ? 'Wala ka pang kinacancel na trials.'
-                    : filter === 'ending_soon'
-                    ? 'Walang active trials na matatapos sa susunod na 7 araw.'
-                    : 'Mag-add ng free trial gamit ang "+" button sa ibaba.'}
-                </Text>
-              </View>
-            ) : (
-              sortedTrials.map((trial) => (
-                <TrialCard
-                  key={trial.id}
-                  trial={trial}
-                  onDelete={handleDelete}
-                />
-              ))
-            )}
-          </View>
+          {/* Cards List */}
+          {sortedTrials.length === 0 ? (
+            <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="filter-outline" size={38} color={colors.textMuted} />
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No trials found</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                {searchQuery ? 'Subukan ang ibang search query.' : 'Walang trial sa napiling filter.'}
+              </Text>
+            </View>
+          ) : (
+            sortedTrials.map((trial) => (
+              <TrialCard
+                key={trial.id}
+                trial={trial}
+                onDelete={handleDelete}
+              />
+            ))
+          )}
 
-          {/* Spacing for FAB */}
           <View style={{ height: 95 }} />
         </ScrollView>
 
-        {/* Floating Add Button */}
         <FloatingAddButton />
       </View>
     </SafeAreaView>
@@ -240,17 +237,14 @@ export default function TrialsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
   },
   container: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 14,
   },
-
-  /* Cashtra Header */
   cashtraHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -262,16 +256,14 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: Theme.colors.textPrimary,
-    letterSpacing: -0.5,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.4,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: Theme.colors.textSecondary,
+    fontWeight: '500',
     marginTop: 2,
-    lineHeight: 16,
   },
   headerActionsRow: {
     flexDirection: 'row',
@@ -281,166 +273,105 @@ const styles = StyleSheet.create({
   headerIconBtn: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
-  headerIconText: {
-    fontSize: 15,
-  },
-  headerAddBtn: {
-    backgroundColor: Theme.colors.primaryLight,
-    borderColor: Theme.colors.primary,
-  },
-  headerAddIconText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Theme.colors.primaryDark,
-    lineHeight: 22,
-  },
-
-  /* Search Input */
   searchBarWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: Theme.radius.md,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
+    height: 44,
     marginBottom: 14,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 10,
     fontSize: 14,
-    color: Theme.colors.textPrimary,
+    fontWeight: '500',
   },
   clearBtn: {
-    padding: 6,
+    padding: 4,
   },
-  clearBtnText: {
-    fontSize: 14,
-    color: Theme.colors.textMuted,
-  },
-
-  /* Cashtra Total Balance Card */
   totalBalanceCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: Theme.radius.xl,
-    padding: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...Theme.shadows.card,
+    padding: 16,
     marginBottom: 16,
   },
   totalBalanceIconWrapper: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#D1FAE5',
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-  },
-  totalBalanceIcon: {
-    fontSize: 22,
   },
   totalBalanceTextCol: {
     flex: 1,
   },
   totalBalanceLabel: {
     fontSize: 11,
-    fontWeight: '700',
-    color: Theme.colors.textSecondary,
-    letterSpacing: 0.4,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   totalBalanceAmount: {
     fontSize: 20,
-    fontWeight: '900',
-    color: Theme.colors.textPrimary,
-    marginTop: 2,
+    fontWeight: '800',
+    letterSpacing: -0.4,
   },
   totalBadge: {
-    backgroundColor: '#F1F5F9',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: Theme.radius.full,
+    borderRadius: 9999,
   },
   totalBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Theme.colors.textSecondary,
   },
-
-  /* Cashtra Filter Section */
   filterSection: {
-    marginBottom: 14,
+    marginBottom: 16,
   },
   filterSectionLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: Theme.colors.textMuted,
     letterSpacing: 0.8,
     marginBottom: 8,
   },
   filterScroll: {
-    flexDirection: 'row',
     gap: 8,
   },
   filterPill: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: Theme.radius.full,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: 7,
+    borderRadius: 9999,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  filterPillActive: {
-    backgroundColor: Theme.colors.primary,
-    borderColor: Theme.colors.primary,
   },
   filterPillText: {
     fontSize: 12,
     fontWeight: '700',
-    color: Theme.colors.textSecondary,
   },
-  filterPillTextActive: {
-    color: '#FFFFFF',
-  },
-
-  /* Cards List */
-  cardsList: {
-    marginTop: 2,
-  },
-  emptyContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Theme.radius.lg,
-    padding: 28,
-    alignItems: 'center',
+  emptyCard: {
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 10,
   },
-  emptyEmoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
   emptyTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: Theme.colors.textPrimary,
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 10,
+    marginBottom: 6,
   },
   emptySubtitle: {
-    fontSize: 12,
-    color: Theme.colors.textSecondary,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 16,
   },
 });

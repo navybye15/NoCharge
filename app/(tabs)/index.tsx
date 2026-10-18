@@ -1,12 +1,12 @@
 // ============================================
-// NoCharge Cashtra + Image 1 & 2 Home Screen
+// NoCharge Cashtra Fintech Home Screen
 // ============================================
 // Features:
-// - Top Greeting Pill [👋 Hello, Saver!] + Notification Bell [🔔]
-// - Cashtra / Image 1 Hero Card with Circular Gauge Arc
-// - Horizontal Week Calendar Strip (Image 2)
-// - Cashtra Signature Stacked Colorful Wallet Cards
-// - Floating + Action Button
+// - Top Header with official 3D Logo mark & Ionicons notification bell
+// - Cashtra / Image 1 Hero Card with Circular Gauge Arc & Split Stats
+// - Horizontal Week Calendar Strip with dot indicators
+// - Monochromatic Theme-tinted Trial Cards
+// - Adaptive Dark / Light / System Mode
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
@@ -17,17 +17,19 @@ import {
   TouchableOpacity,
   RefreshControl,
   SafeAreaView,
-  StatusBar,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Trial, formatCurrency, getDaysLeft } from '../../types/trial';
 import { getTrials, deleteTrial, subscribeToTrials } from '../../services/storage';
-import { Theme } from '../../constants/theme';
+import { useAppTheme } from '../../context/ThemeContext';
 import TrialCard from '../../components/TrialCard';
 import FloatingAddButton from '../../components/FloatingAddButton';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const [trials, setTrials] = useState<Trial[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDayIdx, setSelectedDayIdx] = useState(new Date().getDay()); // 0 = Sun
@@ -54,7 +56,7 @@ export default function HomeScreen() {
     await loadData();
   };
 
-  // Calculations for Cashtra Dashboard
+  // Calculations
   const activeTrials = trials.filter((t) => t.status === 'active');
   const cancelledTrials = trials.filter((t) => t.status === 'cancelled');
 
@@ -87,15 +89,10 @@ export default function HomeScreen() {
   const nearestDays = activeSorted.length > 0 ? getDaysLeft(activeSorted[0].endDate) : null;
   const nearestTrial = activeSorted.length > 0 ? activeSorted[0] : null;
 
-  // Percentage safe vs risk
-  const riskPercentage = totalActiveMonthly > 0
-    ? Math.min(100, Math.round((totalAtRisk7Days / totalActiveMonthly) * 100))
-    : 0;
-
-  // Current Week Days (Sunday to Saturday) - Image 2 inspo
+  // Current Week Days (Sunday to Saturday)
   const weekDays = useMemo(() => {
     const now = new Date();
-    const currDay = now.getDay(); // 0 = Sun
+    const currDay = now.getDay();
     const sunday = new Date(now);
     sunday.setDate(now.getDate() - currDay);
 
@@ -107,7 +104,6 @@ export default function HomeScreen() {
       d.setDate(sunday.getDate() + i);
       const isoStr = d.toISOString().split('T')[0];
 
-      // Check if any trial ends on this date
       const hasTrialEnding = activeTrials.some((t) => t.endDate === isoStr);
 
       days.push({
@@ -122,8 +118,7 @@ export default function HomeScreen() {
   }, [activeTrials]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={Theme.colors.background} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -132,87 +127,107 @@ export default function HomeScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[Theme.colors.primary]}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
             />
           }
         >
-          {/* Top Bar: Inspo 1 & 2 User Greeting Pill + Notification Bell */}
+          {/* Top Bar: Official Logo + App Title & Notification Button */}
           <View style={styles.topBar}>
-            <View style={styles.userPill}>
-              <View style={styles.avatarCircle}>
-                <Text style={styles.avatarEmoji}>🛡️</Text>
+            <View style={styles.brandRow}>
+              <View style={[styles.logoContainer, { backgroundColor: colors.iconContainer, borderColor: colors.borderLight }]}>
+                <Image
+                  source={require('../../assets/images/logo.png')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
               <View>
-                <Text style={styles.userGreeting}>Hello, Saver!</Text>
-                <Text style={styles.userSubtitle}>Don't get charged</Text>
+                <Text style={[styles.brandTitle, { color: colors.textPrimary }]}>NoCharge</Text>
+                <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>
+                  Smart Free Trial Tracker
+                </Text>
               </View>
             </View>
 
             <TouchableOpacity
-              style={styles.bellButton}
+              style={[styles.bellButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => router.push('/notification-result')}
               activeOpacity={0.7}
             >
-              <Text style={styles.bellIcon}>🔔</Text>
-              <View style={styles.bellDot} />
+              <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} />
+              <View style={[styles.bellDot, { backgroundColor: colors.primary }]} />
             </TouchableOpacity>
           </View>
 
-          {/* Cashtra + Inspo 1: Highlight Hero Card with Circular Gauge */}
-          <View style={styles.heroCard}>
+          {/* Cashtra Hero Card with Circular Gauge */}
+          <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.heroTopRow}>
               <View style={styles.heroTextCol}>
-                <View style={styles.heroTagBadge}>
-                  <Text style={styles.heroTagText}>⚡ AT RISK IN 7 DAYS</Text>
+                <View style={[styles.heroTagBadge, { backgroundColor: colors.primaryLight }]}>
+                  <Ionicons name="flash" size={11} color={colors.primary} style={{ marginRight: 4 }} />
+                  <Text style={[styles.heroTagText, { color: colors.primary }]}>AT RISK IN 7 DAYS</Text>
                 </View>
-                <Text style={styles.heroAmount}>{formatCurrency(totalAtRisk7Days)}</Text>
-                <Text style={styles.heroSubtitle}>
+                <Text style={[styles.heroAmount, { color: colors.textPrimary }]}>
+                  {formatCurrency(totalAtRisk7Days)}
+                </Text>
+                <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
                   {nearestTrial
                     ? `Next: ${nearestTrial.serviceName} (${getDaysLeft(nearestTrial.endDate)}d left)`
-                    : 'No upcoming charges due 🎉'}
+                    : 'No upcoming charges due'}
                 </Text>
               </View>
 
-              {/* Cashtra Circular Gauge Arc */}
+              {/* Circular Gauge Arc */}
               <View style={styles.gaugeContainer}>
                 <View
                   style={[
                     styles.gaugeArc,
-                    nearestDays !== null && nearestDays <= 1 && styles.gaugeArcUrgent,
+                    {
+                      borderColor: nearestDays !== null && nearestDays <= 1 ? colors.urgent : colors.primary,
+                      backgroundColor: isDark ? colors.surfaceElevated : colors.surfaceSubtle,
+                    },
                   ]}
                 >
-                  <Text style={styles.gaugePercent}>
+                  <Text
+                    style={[
+                      styles.gaugePercent,
+                      { color: nearestDays !== null && nearestDays <= 1 ? colors.urgent : colors.textPrimary },
+                    ]}
+                  >
                     {nearestDays !== null ? (nearestDays < 0 ? '0' : nearestDays) : '0'}
                   </Text>
-                  <Text style={styles.gaugeLabel}>
-                    {nearestDays === 1 ? 'DAY LEFT' : 'DAYS'}
+                  <Text style={[styles.gaugeLabel, { color: colors.textMuted }]}>
+                    {nearestDays === 1 ? 'DAY' : 'DAYS'}
                   </Text>
                 </View>
               </View>
             </View>
 
-            {/* Split Stat Row (Cashtra Style: Remaining vs Spent / Saved) */}
-            <View style={styles.statSplitRow}>
+            {/* Split Stat Row (Cashtra Style) */}
+            <View style={[styles.statSplitRow, { backgroundColor: isDark ? colors.surfaceElevated : colors.surfaceSubtle, borderColor: colors.borderLight }]}>
               <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Total Active Plans</Text>
-                <Text style={styles.statValue}>{formatCurrency(totalActiveMonthly)}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active Plans</Text>
+                <Text style={[styles.statValue, { color: colors.textPrimary }]}>
+                  {formatCurrency(totalActiveMonthly)}
+                </Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
               <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Estimated Saved</Text>
-                <Text style={[styles.statValue, { color: '#047857' }]}>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Saved</Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>
                   {formatCurrency(estimatedSaved)}
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* Inspo 2: Horizontal Week Date Strip */}
-          <View style={styles.weekStripContainer}>
+          {/* Week Schedule Strip */}
+          <View style={[styles.weekStripContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.weekStripHeader}>
-              <Text style={styles.weekStripTitle}>This Week's Schedule</Text>
+              <Text style={[styles.weekStripTitle, { color: colors.textPrimary }]}>This Week</Text>
               <TouchableOpacity onPress={() => router.push('/calendar')} activeOpacity={0.7}>
-                <Text style={styles.calendarLink}>View Calendar →</Text>
+                <Text style={[styles.calendarLink, { color: colors.primary }]}>Calendar →</Text>
               </TouchableOpacity>
             </View>
 
@@ -224,7 +239,13 @@ export default function HomeScreen() {
                     key={`day-${idx}`}
                     style={[
                       styles.dayPill,
-                      isSelected && styles.dayPillSelected,
+                      {
+                        backgroundColor: isSelected
+                          ? colors.primary
+                          : isDark
+                          ? colors.surfaceElevated
+                          : colors.surfaceSubtle,
+                      },
                     ]}
                     onPress={() => setSelectedDayIdx(idx)}
                     activeOpacity={0.7}
@@ -232,7 +253,7 @@ export default function HomeScreen() {
                     <Text
                       style={[
                         styles.dayPillName,
-                        isSelected && styles.dayPillNameSelected,
+                        { color: isSelected ? '#FFFFFF' : colors.textMuted },
                       ]}
                     >
                       {item.dayName}
@@ -240,7 +261,7 @@ export default function HomeScreen() {
                     <Text
                       style={[
                         styles.dayPillNumber,
-                        isSelected && styles.dayPillNumberSelected,
+                        { color: isSelected ? '#FFFFFF' : colors.textPrimary },
                       ]}
                     >
                       {item.dateNum}
@@ -249,7 +270,7 @@ export default function HomeScreen() {
                       <View
                         style={[
                           styles.dotIndicator,
-                          isSelected && styles.dotIndicatorSelected,
+                          { backgroundColor: isSelected ? '#FFFFFF' : colors.urgent },
                         ]}
                       />
                     ) : (
@@ -261,22 +282,26 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Section: Cashtra Stacked Accounts / Ending Soon */}
+          {/* Section: Ending Soon */}
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionTitle}>Ending Soon</Text>
-              <Text style={styles.sectionSubtitle}>Cancel before charge date</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Ending Soon</Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                Cancel before charge date
+              </Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/trials')} activeOpacity={0.7}>
-              <Text style={styles.seeAllBtn}>See all ({activeTrials.length}) →</Text>
+              <Text style={[styles.seeAllBtn, { color: colors.primary }]}>
+                See all ({activeTrials.length}) →
+              </Text>
             </TouchableOpacity>
           </View>
 
           {activeSorted.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyEmoji}>🎉</Text>
-              <Text style={styles.emptyTitle}>Walang active free trials!</Text>
-              <Text style={styles.emptySubtitle}>
+            <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="checkmark-done-circle-outline" size={48} color={colors.primary} />
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Walang active free trials!</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                 I-tap ang floating '+' button para mag-record ng bagong free trial at mag-set ng reminders.
               </Text>
             </View>
@@ -290,11 +315,10 @@ export default function HomeScreen() {
             ))
           )}
 
-          {/* Spacing for FAB */}
+          {/* Bottom spacing for FAB */}
           <View style={{ height: 95 }} />
         </ScrollView>
 
-        {/* Floating Green + Action Button */}
         <FloatingAddButton />
       </View>
     </SafeAreaView>
@@ -304,7 +328,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
   },
   container: {
     flex: 1,
@@ -313,160 +336,128 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
   },
-
-  /* Top Bar (Inspo 1 & 2) */
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    marginTop: 4,
   },
-  userPill: {
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: Theme.radius.full,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...Theme.shadows.card,
+    gap: 12,
   },
-  avatarCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Theme.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  avatarEmoji: {
-    fontSize: 18,
-  },
-  userGreeting: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: Theme.colors.textPrimary,
-  },
-  userSubtitle: {
-    fontSize: 11,
-    color: Theme.colors.textSecondary,
-  },
-  bellButton: {
+  logoContainer: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    position: 'relative',
-    ...Theme.shadows.card,
+    overflow: 'hidden',
   },
-  bellIcon: {
-    fontSize: 18,
+  logoImage: {
+    width: 38,
+    height: 38,
+  },
+  brandTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+  },
+  brandSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 1,
+  },
+  bellButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   bellDot: {
     position: 'absolute',
-    top: 10,
-    right: 12,
-    width: 8,
-    height: 8,
+    top: 9,
+    right: 9,
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: '#EF4444',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
   },
-
-  /* Hero Card (Cashtra + Inspo 1 Gradient Card) */
   heroCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Theme.radius.xl,
-    padding: 18,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#D1FAE5',
-    ...Theme.shadows.card,
-    marginBottom: 16,
+    padding: 18,
+    marginBottom: 14,
   },
   heroTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   heroTextCol: {
     flex: 1,
     paddingRight: 10,
   },
   heroTagBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Theme.radius.full,
-    marginBottom: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    marginBottom: 8,
   },
   heroTagText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#15803D',
     letterSpacing: 0.5,
   },
   heroAmount: {
     fontSize: 32,
-    fontWeight: '900',
-    color: Theme.colors.textPrimary,
+    fontWeight: '800',
     letterSpacing: -0.6,
+    marginBottom: 4,
   },
   heroSubtitle: {
-    fontSize: 12,
-    color: Theme.colors.textSecondary,
-    marginTop: 4,
+    fontSize: 13,
+    fontWeight: '500',
   },
-
-  /* Cashtra Circular Gauge Arc */
   gaugeContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   gaugeArc: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Theme.colors.primaryLight,
-    borderWidth: 4,
-    borderColor: Theme.colors.primary,
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    borderWidth: 5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gaugeArcUrgent: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#EF4444',
-  },
   gaugePercent: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: Theme.colors.textPrimary,
-    lineHeight: 24,
+    fontSize: 20,
+    fontWeight: '800',
+    lineHeight: 22,
   },
   gaugeLabel: {
     fontSize: 9,
     fontWeight: '800',
-    color: Theme.colors.textSecondary,
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
+    marginTop: 2,
   },
-
-  /* Stat Split Row (Cashtra Style) */
   statSplitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
+    borderRadius: 14,
+    borderWidth: 1,
     paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: Theme.radius.lg,
-    marginTop: 4,
+    paddingHorizontal: 8,
   },
   statBox: {
     flex: 1,
@@ -475,91 +466,61 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 28,
-    backgroundColor: '#BBF7D0',
   },
   statLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: Theme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   statValue: {
     fontSize: 16,
-    fontWeight: '900',
-    color: Theme.colors.textPrimary,
+    fontWeight: '800',
   },
-
-  /* Horizontal Week Date Strip (Image 2) */
   weekStripContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Theme.radius.lg,
-    padding: 14,
-    marginBottom: 18,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...Theme.shadows.card,
+    padding: 14,
+    marginBottom: 20,
   },
   weekStripHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   weekStripTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Theme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
   },
   calendarLink: {
     fontSize: 12,
     fontWeight: '700',
-    color: Theme.colors.primary,
   },
   weekDaysRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   dayPill: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 40,
     paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: Theme.radius.md,
-    backgroundColor: '#F8FAFC',
-    minWidth: 40,
-  },
-  dayPillSelected: {
-    backgroundColor: Theme.colors.primary,
+    borderRadius: 12,
+    alignItems: 'center',
   },
   dayPillName: {
     fontSize: 11,
     fontWeight: '700',
-    color: Theme.colors.textMuted,
     marginBottom: 4,
-  },
-  dayPillNameSelected: {
-    color: '#FFFFFF',
   },
   dayPillNumber: {
     fontSize: 14,
     fontWeight: '800',
-    color: Theme.colors.textPrimary,
-  },
-  dayPillNumberSelected: {
-    color: '#FFFFFF',
   },
   dotIndicator: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#EF4444',
-    marginTop: 4,
+    marginTop: 5,
   },
-  dotIndicatorSelected: {
-    backgroundColor: '#FFFFFF',
-  },
-
-  /* Section Header */
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -568,44 +529,34 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '900',
-    color: Theme.colors.textPrimary,
+    fontWeight: '800',
     letterSpacing: -0.3,
   },
   sectionSubtitle: {
     fontSize: 12,
-    color: Theme.colors.textSecondary,
-    marginTop: 1,
+    fontWeight: '500',
+    marginTop: 2,
   },
   seeAllBtn: {
     fontSize: 13,
     fontWeight: '700',
-    color: Theme.colors.primary,
   },
-
-  /* Empty State */
   emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: Theme.radius.lg,
+    borderRadius: 18,
+    borderWidth: 1,
     padding: 24,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  emptyEmoji: {
-    fontSize: 40,
-    marginBottom: 8,
+    justifyContent: 'center',
   },
   emptyTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: Theme.colors.textPrimary,
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 10,
+    marginBottom: 6,
   },
   emptySubtitle: {
-    fontSize: 12,
-    color: Theme.colors.textSecondary,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 18,
   },
 });

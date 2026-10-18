@@ -1,23 +1,20 @@
-// ============================================
-// Floating Add Button Component
-// ============================================
-// Bright green floating action button positioned at bottom-right
-
 import React from 'react';
-import { StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Theme } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function FloatingAddButton() {
   const router = useRouter();
+  const { colors } = useAppTheme();
 
   return (
     <TouchableOpacity
-      style={styles.fab}
+      style={[styles.fab, { backgroundColor: colors.primary }]}
       activeOpacity={0.85}
       onPress={() => router.push('/trials/add')}
     >
-      <Text style={styles.plusIcon}>+</Text>
+      <Ionicons name="add" size={32} color="#FFFFFF" />
     </TouchableOpacity>
   );
 }
@@ -30,17 +27,13 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: Theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Theme.shadows.floating,
+    shadowColor: '#00C06A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
     zIndex: 99,
-  },
-  plusIcon: {
-    color: '#FFFFFF',
-    fontSize: 34,
-    fontWeight: '300',
-    lineHeight: 38,
-    marginTop: -2,
   },
 });

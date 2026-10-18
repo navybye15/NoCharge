@@ -1,51 +1,53 @@
+import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-
-// ============================================
-// Notification Result Screen
-// ============================================
-// Ang screen na ito ang mag-o-open kapag nag-tap ang user sa notification.
-// Kung nakita mo ito, ibig sabihin gumagana na ang notification + navigation!
+import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function NotificationResultScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        {/* Big success checkmark */}
-        <Text style={styles.emoji}>🎉</Text>
-        <Text style={styles.title}>Success!</Text>
-        <Text style={styles.subtitle}>
-          Gumagana na ang notifications!
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
+          <Ionicons name="checkmark-circle" size={44} color={colors.primary} />
+        </View>
+
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Notification Delivered!</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          Active and working offline notifications
         </Text>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
 
-        <Text style={styles.detail}>
-          Ito ang screen na mag-o-open kapag nag-tap ka sa notification.
-        </Text>
-        <Text style={styles.detail}>
-          Sa real app, dito makikita mo yung trial details at yung "Open
-          cancel page" button.
+        <Text style={[styles.detail, { color: colors.textSecondary }]}>
+          Ito ang action destination kapag nag-tap ka sa scheduled reminder.
         </Text>
 
-        <View style={styles.checkList}>
-          <Text style={styles.checkItem}>✅ Notification scheduled</Text>
-          <Text style={styles.checkItem}>✅ Notification received</Text>
-          <Text style={styles.checkItem}>✅ Tap opens this screen</Text>
-          <Text style={styles.checkItem}>
-            ✅ Ready for Phase 2!
-          </Text>
+        <View style={[styles.checkList, { backgroundColor: colors.surfaceSubtle, borderColor: colors.borderLight }]}>
+          <View style={styles.checkRow}>
+            <Ionicons name="checkmark" size={16} color={colors.primary} />
+            <Text style={[styles.checkItem, { color: colors.textPrimary }]}>Background reminder scheduled</Text>
+          </View>
+          <View style={styles.checkRow}>
+            <Ionicons name="checkmark" size={16} color={colors.primary} />
+            <Text style={[styles.checkItem, { color: colors.textPrimary }]}>Alarm fired on time</Text>
+          </View>
+          <View style={styles.checkRow}>
+            <Ionicons name="checkmark" size={16} color={colors.primary} />
+            <Text style={[styles.checkItem, { color: colors.textPrimary }]}>Deep link opens app</Text>
+          </View>
         </View>
       </View>
 
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, { backgroundColor: colors.primary }]}
         onPress={() => router.back()}
         activeOpacity={0.8}
       >
-        <Text style={styles.buttonText}>← Back to Test Screen</Text>
+        <Text style={styles.buttonText}>← Back to App</Text>
       </TouchableOpacity>
     </View>
   );
@@ -54,75 +56,70 @@ export default function NotificationResultScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0FFF4',
     padding: 20,
     justifyContent: 'center',
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 32,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    marginBottom: 20,
   },
-  emoji: {
-    fontSize: 64,
+  iconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#1B5E20',
-    marginBottom: 4,
+    letterSpacing: -0.3,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#66BB6A',
-    marginBottom: 16,
+    fontSize: 14,
+    textAlign: 'center',
   },
   divider: {
     height: 1,
-    backgroundColor: '#E8F5E9',
     width: '100%',
-    marginVertical: 16,
+    marginVertical: 18,
   },
   detail: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: 13,
+    lineHeight: 19,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   checkList: {
-    marginTop: 16,
-    alignSelf: 'flex-start',
     width: '100%',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    gap: 10,
+  },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   checkItem: {
-    fontSize: 15,
-    color: '#2E7D32',
-    lineHeight: 28,
+    fontSize: 13,
     fontWeight: '600',
   },
   button: {
-    marginTop: 24,
-    backgroundColor: '#2ECC71',
-    borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 15,
+    borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#2ECC71',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    justifyContent: 'center',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
   },
 });

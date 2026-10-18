@@ -1,37 +1,42 @@
 import { Tabs } from 'expo-router';
-import { Text, Platform } from 'react-native';
-import { Theme } from '../../constants/theme';
+import { Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function TabLayout() {
+  const { colors } = useAppTheme();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Theme.colors.primary,
-        tabBarInactiveTintColor: Theme.colors.textMuted,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
+          fontSize: 11,
+          fontWeight: '700',
           marginBottom: 4,
+          letterSpacing: 0.2,
         },
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: Theme.colors.border,
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
           height: Platform.OS === 'android' ? 64 : 60,
-          paddingBottom: 6,
+          paddingBottom: 8,
           paddingTop: 6,
-          elevation: 8,
+          elevation: 0,
         },
         headerStyle: {
-          backgroundColor: Theme.colors.background,
+          backgroundColor: colors.background,
           elevation: 0,
           shadowOpacity: 0,
-          borderBottomWidth: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.borderLight,
         },
         headerTitleStyle: {
           fontWeight: '800',
           fontSize: 18,
-          color: Theme.colors.textPrimary,
+          color: colors.textPrimary,
         },
       }}
     >
@@ -41,7 +46,11 @@ export default function TabLayout() {
           title: 'Home',
           headerShown: false,
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 22 }}>{focused ? '🏠' : '🏡'}</Text>
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -51,7 +60,11 @@ export default function TabLayout() {
           title: 'Trials',
           headerTitle: 'My Free Trials',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 22 }}>💳</Text>
+            <Ionicons
+              name={focused ? 'card' : 'card-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -61,7 +74,11 @@ export default function TabLayout() {
           title: 'Calendar',
           headerTitle: 'Charge Dates Calendar',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 22 }}>📅</Text>
+            <Ionicons
+              name={focused ? 'calendar' : 'calendar-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -71,7 +88,11 @@ export default function TabLayout() {
           title: 'Settings',
           headerTitle: 'Settings & Reminders',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 22 }}>⚙️</Text>
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
