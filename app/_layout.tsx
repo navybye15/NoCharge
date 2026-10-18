@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import 'react-native-reanimated';
+import { reconcileRemindersOnLaunch } from '../services/storage';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -66,6 +67,9 @@ function RootLayoutNav() {
 
     // Request permission (Android 13+ requires this)
     registerForNotifications();
+
+    // Reconcile and reschedule reminders so they survive reboots
+    reconcileRemindersOnLaunch();
 
     // Listener: kapag nag-tap yung user sa notification, dadalhin siya sa detail screen
     responseListener.current =

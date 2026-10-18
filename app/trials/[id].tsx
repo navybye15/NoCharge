@@ -168,9 +168,18 @@ export default function TrialDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.navBackBtn} activeOpacity={0.7}>
             <Text style={styles.navBackText}>← Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleDelete} style={styles.navDeleteBtn} activeOpacity={0.7}>
-            <Text style={styles.navDeleteText}>Delete</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => router.push(`/trials/add?editId=${trial.id}` as any)}
+              style={styles.navEditBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.navEditText}>✏️ Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDelete} style={styles.navDeleteBtn} activeOpacity={0.7}>
+              <Text style={styles.navDeleteText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Big Countdown Hero Card */}
@@ -339,6 +348,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: Theme.colors.textPrimary,
+  },
+  navEditBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#EFF6FF',
+    borderRadius: Theme.radius.full,
+  },
+  navEditText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2563EB',
   },
   navDeleteBtn: {
     paddingVertical: 6,

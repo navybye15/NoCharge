@@ -53,6 +53,47 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleTestQuickReminder = async () => {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🔔 NoCharge: 5s Quick Test',
+          body: 'Gumagana ang instant reminder! Lahat ng notifications ay active.',
+          data: { screen: 'notification-test' },
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 5,
+          channelId: 'trial-reminders',
+        },
+      });
+      Alert.alert(
+        'Scheduled!',
+        'Mag-a-alarm ang test notification pagkalipas ng 5 segundo. Pwede mong i-lock ang screen para subukan.'
+      );
+    } catch (err) {
+      Alert.alert('Error', 'Hindi ma-schedule ang notification. Paki-check ang permissions.');
+    }
+  };
+
+  const handleBackupData = async () => {
+    try {
+      const raw = await AsyncStorage.getItem('@nocharge_trials_v1');
+      if (!raw) {
+        Alert.alert('Backup', 'Walang trials na naka-save.');
+        return;
+      }
+      Alert.alert(
+        'Offline Data Backup',
+        `May ${JSON.parse(raw).length} trials na naka-store sa device storage mo.\n\nLahat ng data ay nananatili sa loob lamang ng iyong telepono.`,
+        [{ text: 'OK' }]
+      );
+    } catch (err) {
+      Alert.alert('Error', 'Nagkaproblema sa pagbasa ng storage.');
+    }
+  };
+
   const handleResetData = () => {
     Alert.alert(
       'Reset All Trials',
@@ -126,6 +167,24 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.badgeValue}>3, 1, 0 days</Text>
           </View>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={[styles.row, { paddingVertical: 4 }]}
+            onPress={handleTestQuickReminder}
+            activeOpacity={0.7}
+          >
+            <View style={styles.rowLeft}>
+              <Text style={[styles.rowTitle, { color: Theme.colors.primaryDark }]}>
+                🔔 Test 5s Quick Alert
+              </Text>
+              <Text style={styles.rowSubtitle}>Schedules a test alarm in 5 seconds</Text>
+            </View>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: Theme.colors.primary }}>
+              Trigger →
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Section: Battery Optimization Guide */}
@@ -170,6 +229,22 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.badgeValue}>100% Offline</Text>
           </View>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={[styles.row, { paddingVertical: 4 }]}
+            onPress={handleBackupData}
+            activeOpacity={0.7}
+          >
+            <View style={styles.rowLeft}>
+              <Text style={styles.rowTitle}>📦 Backup Data Summary</Text>
+              <Text style={styles.rowSubtitle}>Check local offline storage status</Text>
+            </View>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: Theme.colors.primary }}>
+              View →
+            </Text>
+          </TouchableOpacity>
 
           <View style={styles.divider} />
 

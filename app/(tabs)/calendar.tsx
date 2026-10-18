@@ -93,7 +93,20 @@ export default function CalendarScreen() {
             <TouchableOpacity onPress={prevMonth} style={styles.navButton} activeOpacity={0.7}>
               <Text style={styles.navButtonText}>‹</Text>
             </TouchableOpacity>
-            <Text style={styles.monthTitle}>{monthName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.monthTitle}>{monthName}</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  const now = new Date();
+                  setCurrentDate(now);
+                  setSelectedDateStr(now.toISOString().split('T')[0]);
+                }}
+                style={styles.todayBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.todayBtnText}>Today</Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity onPress={nextMonth} style={styles.navButton} activeOpacity={0.7}>
               <Text style={styles.navButtonText}>›</Text>
             </TouchableOpacity>
@@ -201,9 +214,20 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.sm,
   },
   monthTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     color: Theme.colors.textPrimary,
+  },
+  todayBtn: {
+    backgroundColor: Theme.colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Theme.radius.full,
+  },
+  todayBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Theme.colors.primaryDark,
   },
   navButton: {
     width: 38,

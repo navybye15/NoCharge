@@ -8,7 +8,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Trial } from '../types/trial';
 import { Theme } from '../constants/theme';
-import { scheduleTrialReminders, cancelTrialReminders } from './notifications';
+import {
+  scheduleTrialReminders,
+  cancelTrialReminders,
+  rescheduleAllActiveReminders,
+} from './notifications';
 
 const STORAGE_KEY = '@nocharge_trials_v1';
 
@@ -226,4 +230,18 @@ export async function deleteTrial(id: string): Promise<void> {
 export async function getTrialById(id: string): Promise<Trial | null> {
   const current = await getTrials();
   return current.find((t) => t.id === id) || null;
+}
+
+/**
+ * Reconciles all active reminders upon application launch, ensuring scheduled
+ * notifications survive phone restarts.
+ */
+export async function reconcileRemindersOnLaunch(): Promise<void> {
+  try {
+    const trials = await getTrials();
+    const reconciled = await rescheduleAllActiveReminders(trials);
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reconciled));
+  } catch (err) {
+    console.warn('Failed to reconcile reminders on launch:', err);
+  }
 }

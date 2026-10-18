@@ -17,13 +17,16 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { BillingCycle, getDaysLeft } from '../../types/trial';
-import { saveTrial, getPaletteColor } from '../../services/storage';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
+import { BillingCycle, getDaysLeft, Trial } from '../../types/trial';
+import { saveTrial, updateTrial, getTrialById, getPaletteColor } from '../../services/storage';
 import { Theme } from '../../constants/theme';
 
 export default function AddTrialScreen() {
   const router = useRouter();
+  const { editId } = useLocalSearchParams<{ editId?: string }>();
+  const [existingTrial, setExistingTrial] = useState<Trial | null>(null);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -39,6 +42,26 @@ export default function AddTrialScreen() {
   const [notes, setNotes] = useState('');
   const [reminderOffsets, setReminderOffsets] = useState<number[]>([3, 1, 0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load existing trial if in Edit mode
+  useEffect(() => {
+    if (!editId) return;
+    (async () => {
+      const found = await getTrialById(editId);
+      if (found) {
+        setExistingTrial(found);
+        setServiceName(found.serviceName);
+        if (found.startDate) setStartDate(found.startDate);
+        setEndDate(found.endDate);
+        setPriceStr(found.priceAfterTrial ? found.priceAfterTrial.toString() : '');
+        setBillingCycle(found.billingCycle);
+        if (found.cancelLink) setCancelLink(found.cancelLink);
+        if (found.paymentLabel) setPaymentLabel(found.paymentLabel);
+        if (found.notes) setNotes(found.notes);
+        if (found.reminderOffsetsDays) setReminderOffsets(found.reminderOffsetsDays);
+      }
+    })();
+  }, [editId]);
 
   // Shortcut helpers to auto-compute end date
   const applyShortcut = (label: string, days: number, months: number = 0, years: number = 0) => {
@@ -115,26 +138,49 @@ export default function AddTrialScreen() {
         ? `https://${cancelLink.trim()}`
         : cancelLink.trim();
 
-      await saveTrial({
-        serviceName: serviceName.trim(),
-        startDate: startDate.trim() || undefined,
-        endDate: endDate.trim(),
-        priceAfterTrial: parsedPrice,
-        billingCycle,
-        cancelLink: cleanUrl || undefined,
-        paymentLabel: paymentLabel.trim() || undefined,
-        notes: notes.trim() || undefined,
-        reminderOffsetsDays: reminderOffsets.length > 0 ? reminderOffsets : [0],
-        status: 'active',
-        color: getPaletteColor(Math.floor(Math.random() * 9)),
-      });
+      if (existingTrial) {
+        // Update existing trial
+        await updateTrial({
+          ...existingTrial,
+          serviceName: serviceName.trim(),
+          startDate: startDate.trim() || undefined,
+          endDate: endDate.trim(),
+          priceAfterTrial: parsedPrice,
+          billingCycle,
+          cancelLink: cleanUrl || undefined,
+          paymentLabel: paymentLabel.trim() || undefined,
+          notes: notes.trim() || undefined,
+          reminderOffsetsDays: reminderOffsets.length > 0 ? reminderOffsets : [0],
+        });
+      } else {
+        // Save new trial
+        await saveTrial({
+          serviceName: serviceName.trim(),
+          startDate: startDate.trim() || undefined,
+          endDate: endDate.trim(),
+          priceAfterTrial: parsedPrice,
+          billingCycle,
+          cancelLink: cleanUrl || undefined,
+          paymentLabel: paymentLabel.trim() || undefined,
+          notes: notes.trim() || undefined,
+          reminderOffsetsDays: reminderOffsets.length > 0 ? reminderOffsets : [0],
+          status: 'active',
+          color: getPaletteColor(Math.floor(Math.random() * 9)),
+        });
+      }
 
-      Alert.alert('Saved! 🎉', `Matagumpay na na-save ang "${serviceName}".`, [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      Alert.alert(
+        'Saved! 🎉',
+        existingTrial
+          ? `Na-update na ang trial na "${serviceName}".`
+          : `Matagumpay na na-save ang "${serviceName}".`,
+        [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]
+      );
     } catch (error) {
       console.error('Error saving trial:', error);
       Alert.alert('Error', 'Nagkaproblema sa pag-save. Pakisubukang muli.');
@@ -155,7 +201,9 @@ export default function AddTrialScreen() {
             <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn} activeOpacity={0.7}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add Free Trial</Text>
+            <Text style={styles.headerTitle}>
+              {existingTrial ? 'Edit Free Trial' : 'Add Free Trial'}
+            </Text>
             <View style={{ width: 36 }} />
           </View>
 
@@ -361,7 +409,11 @@ export default function AddTrialScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.saveBtnText}>
-              {isSubmitting ? 'Saving...' : 'Save Free Trial'}
+              {isSubmitting
+                ? 'Saving...'
+                : existingTrial
+                ? 'Save Changes'
+                : 'Save Free Trial'}
             </Text>
           </TouchableOpacity>
 

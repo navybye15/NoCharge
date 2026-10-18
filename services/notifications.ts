@@ -130,3 +130,26 @@ export async function cancelTrialReminders(notificationIds?: string[]): Promise<
     }
   }
 }
+
+/**
+ * Reconciles and reschedules upcoming reminders on app launch to guarantee
+ * reminders survive device reboots without relying on BOOT_COMPLETED.
+ */
+export async function rescheduleAllActiveReminders(trials: Trial[]): Promise<Trial[]> {
+  const updatedTrials: Trial[] = [];
+
+  for (const trial of trials) {
+    if (trial.status === 'active') {
+      // Cancel previous to avoid duplicate schedules
+      if (trial.notificationIds && trial.notificationIds.length > 0) {
+        await cancelTrialReminders(trial.notificationIds);
+      }
+      const newIds = await scheduleTrialReminders(trial);
+      updatedTrials.push({ ...trial, notificationIds: newIds });
+    } else {
+      updatedTrials.push(trial);
+    }
+  }
+
+  return updatedTrials;
+}
