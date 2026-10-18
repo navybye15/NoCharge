@@ -207,7 +207,11 @@ export default function HomeScreen() {
                   <Ionicons name="flash" size={12} color="#091B27" style={{ marginRight: 4 }} />
                   <Text style={styles.heroTagText}>AT RISK IN 7 DAYS</Text>
                 </View>
-                <Text style={styles.heroDisplayNumber}>
+                <Text
+                  style={styles.heroDisplayNumber}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
                   {formatCurrency(totalAtRisk7Days)}
                 </Text>
                 <Text style={styles.heroSubtitle}>
@@ -227,12 +231,16 @@ export default function HomeScreen() {
             <View style={styles.splitStatRow}>
               <View style={styles.splitBox}>
                 <Text style={styles.splitLabel}>ACTIVE PLANS</Text>
-                <Text style={styles.splitValue}>{formatCurrency(totalActiveMonthly)}</Text>
+                <Text style={styles.splitValue} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatCurrency(totalActiveMonthly)}
+                </Text>
               </View>
               <View style={styles.splitDivider} />
               <View style={styles.splitBox}>
                 <Text style={styles.splitLabel}>ESTIMATED SAVED</Text>
-                <Text style={styles.splitValueSaved}>{formatCurrency(estimatedSaved)}</Text>
+                <Text style={styles.splitValueSaved} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatCurrency(estimatedSaved)}
+                </Text>
               </View>
             </View>
           </LinearGradient>
@@ -373,6 +381,8 @@ export default function HomeScreen() {
                         styles.dayNumber,
                         { color: isSelected ? colors.onPrimary : colors.text },
                       ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
                     >
                       {item.dateNum}
                     </Text>
@@ -653,7 +663,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dayPill: {
-    width: 40,
+    flex: 1,
+    marginHorizontal: 2,
     paddingVertical: 8,
     borderRadius: 12,
     alignItems: 'center',

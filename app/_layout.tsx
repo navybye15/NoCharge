@@ -28,7 +28,7 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+// SplashScreen.preventAutoHideAsync().catch(() => {});
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -40,7 +40,7 @@ Notifications.setNotificationHandler({
 });
 
 export default function RootLayout() {
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
     Manrope_600SemiBold,
@@ -49,14 +49,8 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
+    SplashScreen.hideAsync().catch(() => {});
+  }, [loaded, error]);
 
   return (
     <AppThemeProvider>

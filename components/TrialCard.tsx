@@ -141,7 +141,11 @@ export default function TrialCard({ trial, cardWidth, onPress, onDelete }: Trial
               style={{ marginRight: 4 }}
             />
           ) : null}
-          <Text style={[styles.countdownText, { color: chipText }]}>
+          <Text
+            style={[styles.countdownText, { color: chipText }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
             {chipLabel}
           </Text>
         </View>
@@ -149,10 +153,10 @@ export default function TrialCard({ trial, cardWidth, onPress, onDelete }: Trial
 
       {/* Middle: Big Price / Countdown (Display / H2) */}
       <View style={styles.middleRow}>
-        <Text style={styles.priceHero}>
+        <Text style={styles.priceHero} numberOfLines={1} adjustsFontSizeToFit>
           {formatCurrency(trial.priceAfterTrial)}
         </Text>
-        <Text style={styles.cycleText}>
+        <Text style={styles.cycleText} numberOfLines={1} adjustsFontSizeToFit>
           {trial.billingCycle === 'monthly' ? '/ month' : trial.billingCycle === 'yearly' ? '/ year' : 'one-time'}
         </Text>
       </View>
@@ -161,7 +165,7 @@ export default function TrialCard({ trial, cardWidth, onPress, onDelete }: Trial
       <View style={styles.bottomRow}>
         <View style={styles.dateCol}>
           <Text style={styles.bottomLabel}>CHARGE DATE</Text>
-          <Text style={styles.bottomValue}>
+          <Text style={styles.bottomValue} numberOfLines={1} adjustsFontSizeToFit>
             {formatReadableDate(trial.endDate)}
           </Text>
         </View>
@@ -169,7 +173,7 @@ export default function TrialCard({ trial, cardWidth, onPress, onDelete }: Trial
         {trial.paymentLabel ? (
           <View style={styles.paymentCol}>
             <Text style={styles.bottomLabel}>PAYMENT</Text>
-            <Text style={styles.bottomValue} numberOfLines={1}>
+            <Text style={styles.bottomValue} numberOfLines={1} adjustsFontSizeToFit>
               {trial.paymentLabel}
             </Text>
           </View>

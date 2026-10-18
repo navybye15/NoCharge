@@ -46,14 +46,40 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
     const config = getTabConfig(route.name);
 
     const onPress = () => {
-      const event = navigation.emit({
-        type: 'tabPress',
-        target: route.key,
-        canPreventDefault: true,
-      });
+      try {
+        if (navigation?.emit) {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+          if (event?.defaultPrevented) return;
+        }
+      } catch (e) {
+        // Safe fallback
+      }
 
-      if (!isFocused && !event.defaultPrevented) {
-        navigation.navigate(route.name);
+      if (!isFocused) {
+        switch (route.name) {
+          case 'index':
+            router.navigate('/(tabs)');
+            break;
+          case 'trials':
+            router.navigate('/(tabs)/trials');
+            break;
+          case 'calendar':
+            router.navigate('/(tabs)/calendar');
+            break;
+          case 'settings':
+            router.navigate('/(tabs)/settings');
+            break;
+          default:
+            try {
+              navigation?.navigate(route.name);
+            } catch (err) {
+              router.navigate(`/(tabs)/${route.name}` as any);
+            }
+        }
       }
     };
 
@@ -84,6 +110,9 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
             color={isFocused ? activeColor : inactiveColor}
           />
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            maxFontSizeMultiplier={1.15}
             style={[
               styles.tabLabel,
               {
@@ -180,14 +209,14 @@ const styles = StyleSheet.create({
   tabPill: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 9999,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     marginTop: 2,
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   centerButtonSpacer: {
     width: 68,
