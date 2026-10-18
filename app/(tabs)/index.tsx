@@ -44,7 +44,7 @@ export default function NotificationTestScreen() {
           title: '🔔 NoCharge Test Reminder',
           body: 'Ito ang test notification! Tap mo ito para ma-verify na gumagana ang navigation.',
           data: { screen: 'notification-test', testId: Date.now() },
-          sound: 'default',
+          sound: true,
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,

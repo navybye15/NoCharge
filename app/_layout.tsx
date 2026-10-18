@@ -129,7 +129,6 @@ async function setupNotificationChannel() {
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#2ECC71',
-      sound: 'default',
       description: 'Reminders before your free trials end',
     });
   }
