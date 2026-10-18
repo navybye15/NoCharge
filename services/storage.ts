@@ -8,6 +8,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Trial } from '../types/trial';
 import { Theme } from '../constants/theme';
+import { scheduleTrialReminders, cancelTrialReminders } from './notifications';
 
 const STORAGE_KEY = '@nocharge_trials_v1';
 
@@ -163,6 +164,12 @@ export async function saveTrial(
     createdAt: Date.now(),
   };
 
+  // Schedule real reminders if active
+  if (newTrial.status === 'active') {
+    const notifIds = await scheduleTrialReminders(newTrial);
+    newTrial.notificationIds = notifIds;
+  }
+
   const updated = [newTrial, ...current];
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   notifySubscribers();
@@ -179,6 +186,20 @@ export async function updateTrial(updatedTrial: Trial): Promise<void> {
     throw new Error(`Trial with id ${updatedTrial.id} not found.`);
   }
 
+  // Cancel old scheduled notifications to avoid duplicates or orphans
+  const oldTrial = current[index];
+  if (oldTrial.notificationIds && oldTrial.notificationIds.length > 0) {
+    await cancelTrialReminders(oldTrial.notificationIds);
+  }
+
+  // Reschedule if still active
+  if (updatedTrial.status === 'active') {
+    const newNotifIds = await scheduleTrialReminders(updatedTrial);
+    updatedTrial.notificationIds = newNotifIds;
+  } else {
+    updatedTrial.notificationIds = [];
+  }
+
   current[index] = updatedTrial;
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(current));
   notifySubscribers();
@@ -189,6 +210,11 @@ export async function updateTrial(updatedTrial: Trial): Promise<void> {
  */
 export async function deleteTrial(id: string): Promise<void> {
   const current = await getTrials();
+  const toDelete = current.find((t) => t.id === id);
+  if (toDelete && toDelete.notificationIds && toDelete.notificationIds.length > 0) {
+    await cancelTrialReminders(toDelete.notificationIds);
+  }
+
   const filtered = current.filter((t) => t.id !== id);
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
   notifySubscribers();

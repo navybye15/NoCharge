@@ -16,6 +16,7 @@ export interface Trial {
   paymentLabel?: string;          // e.g. "GCash", "BPI Card", "Maya"
   notes?: string;
   reminderOffsetsDays: number[];  // default [3, 1, 0]
+  notificationIds?: string[];     // IDs of scheduled notifications in expo-notifications
   status: TrialStatus;
   color: string;                  // Hex string from palette
   createdAt: number;              // Timestamp

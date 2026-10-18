@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Trial, formatReadableDate, formatCurrency, getCountdownInfo } from '../types/trial';
 import { Theme } from '../constants/theme';
 
@@ -16,8 +17,17 @@ interface TrialCardProps {
 }
 
 export default function TrialCard({ trial, onPress, onDelete }: TrialCardProps) {
+  const router = useRouter();
   const countdown = getCountdownInfo(trial.endDate);
   const initial = trial.serviceName.trim().charAt(0).toUpperCase() || '?';
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else {
+      router.push(`/trials/${trial.id}` as any);
+    }
+  };
 
   const handleLongPress = () => {
     if (!onDelete) return;
@@ -41,7 +51,7 @@ export default function TrialCard({ trial, onPress, onDelete }: TrialCardProps) 
   return (
     <TouchableOpacity
       style={[styles.card, isCancelled && styles.cardCancelled]}
-      onPress={onPress}
+      onPress={handlePress}
       onLongPress={handleLongPress}
       activeOpacity={0.7}
     >

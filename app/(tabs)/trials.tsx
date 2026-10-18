@@ -176,7 +176,7 @@ export default function TrialsScreen() {
               <TrialCard
                 key={trial.id}
                 trial={trial}
-                onPress={() => handleCardPress(trial)}
+                onPress={() => router.push(`/trials/${trial.id}` as any)}
                 onDelete={handleDelete}
               />
             ))

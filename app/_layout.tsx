@@ -71,9 +71,10 @@ function RootLayoutNav() {
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data;
-        // Kung may trialId sa data, navigate sa detail screen
         if (data?.screen === 'notification-test') {
           router.push('/notification-result');
+        } else if (data?.trialId) {
+          router.push(`/trials/${data.trialId}` as any);
         }
       });
 
@@ -114,6 +115,12 @@ function RootLayoutNav() {
           options={{
             headerShown: false,
             presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="trials/[id]"
+          options={{
+            headerShown: false,
           }}
         />
       </Stack>
