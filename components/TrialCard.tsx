@@ -1,8 +1,9 @@
 // ============================================
-// Trial Card Component
+// Cashtra-Style Wallet Trial Card Component
 // ============================================
-// Rounded white card representing a trial with
-// colored initial circle, price, and countdown chip.
+// Signature Cashtra stacked wallet card design:
+// Rich colored cards, initial badge, payment method tag,
+// bold ₱ amount, and countdown badge.
 
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
@@ -48,175 +49,232 @@ export default function TrialCard({ trial, onPress, onDelete }: TrialCardProps) 
   const isCancelled = trial.status === 'cancelled';
   const isKept = trial.status === 'kept';
 
+  // Card color background (Cashtra signature style)
+  const cardColor = isCancelled ? '#64748B' : trial.color || Theme.colors.primary;
+
   return (
     <TouchableOpacity
-      style={[styles.card, isCancelled && styles.cardCancelled]}
+      style={[
+        styles.walletCard,
+        { backgroundColor: cardColor },
+        isCancelled && styles.cardCancelled,
+      ]}
       onPress={handlePress}
       onLongPress={handleLongPress}
-      activeOpacity={0.7}
+      activeOpacity={0.85}
     >
-      <View style={styles.cardHeader}>
-        {/* Left: Service Avatar circle with initial */}
-        <View style={[styles.avatar, { backgroundColor: trial.color || Theme.colors.primary }]}>
-          <Text style={styles.avatarText}>{initial}</Text>
-        </View>
+      {/* Background card texture/shading for depth */}
+      <View style={styles.cardShine} />
 
-        {/* Center: Service info */}
-        <View style={styles.infoContainer}>
-          <Text style={[styles.serviceName, isCancelled && styles.textStrikethrough]} numberOfLines={1}>
-            {trial.serviceName}
-          </Text>
-          <View style={styles.metaRow}>
-            {trial.paymentLabel ? (
-              <Text style={styles.metaText}>{trial.paymentLabel} • </Text>
-            ) : null}
-            <Text style={styles.metaText}>
-              Ends {formatReadableDate(trial.endDate)}
+      <View style={styles.cardContent}>
+        {/* Top Row: Service info and Price */}
+        <View style={styles.topRow}>
+          {/* Service Initial Badge */}
+          <View style={styles.iconBadge}>
+            <Text style={styles.iconInitial}>{initial}</Text>
+          </View>
+
+          {/* Name & Payment label */}
+          <View style={styles.nameCol}>
+            <Text
+              style={[styles.serviceName, isCancelled && styles.textStrikethrough]}
+              numberOfLines={1}
+            >
+              {trial.serviceName}
+            </Text>
+            <Text style={styles.paymentSub}>
+              {trial.paymentLabel ? `${trial.paymentLabel.toUpperCase()} • ` : ''}
+              {trial.billingCycle ? trial.billingCycle.toUpperCase() : 'MONTHLY'}
+            </Text>
+          </View>
+
+          {/* Price */}
+          <View style={styles.priceCol}>
+            <Text style={styles.priceAmount}>{formatCurrency(trial.priceAfterTrial)}</Text>
+            <Text style={styles.priceCycle}>
+              {trial.billingCycle === 'monthly' ? '/ mo' : trial.billingCycle === 'yearly' ? '/ yr' : 'once'}
             </Text>
           </View>
         </View>
 
-        {/* Right: Price */}
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceText}>{formatCurrency(trial.priceAfterTrial)}</Text>
-          <Text style={styles.cycleText}>
-            {trial.billingCycle === 'monthly' ? '/ mo' : trial.billingCycle === 'yearly' ? '/ yr' : 'once'}
-          </Text>
+        {/* Bottom Row: Countdown Pill & Deadline Date */}
+        <View style={styles.bottomRow}>
+          <View style={styles.dateInfo}>
+            <Text style={styles.dateLabel}>
+              Charge date: <Text style={styles.dateBold}>{formatReadableDate(trial.endDate)}</Text>
+            </Text>
+          </View>
+
+          {/* Status Chip */}
+          {isCancelled ? (
+            <View style={[styles.chip, styles.chipCancelled]}>
+              <Text style={styles.chipTextCancelled}>🚫 CANCELLED</Text>
+            </View>
+          ) : isKept ? (
+            <View style={[styles.chip, styles.chipKept]}>
+              <Text style={styles.chipTextKept}>✅ KEPT</Text>
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.chip,
+                countdown.isUrgent ? styles.chipUrgent : countdown.isWarning ? styles.chipWarning : styles.chipSafe,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  countdown.isUrgent ? styles.chipTextUrgent : countdown.isWarning ? styles.chipTextWarning : styles.chipTextSafe,
+                ]}
+              >
+                ⏳ {countdown.label}
+              </Text>
+            </View>
+          )}
         </View>
-      </View>
-
-      {/* Card Footer: Status Chip and Quick Details */}
-      <View style={styles.cardFooter}>
-        {isCancelled ? (
-          <View style={[styles.chip, { backgroundColor: Theme.colors.cancelledBg }]}>
-            <Text style={[styles.chipText, { color: Theme.colors.cancelled }]}>
-              🚫 Cancelled
-            </Text>
-          </View>
-        ) : isKept ? (
-          <View style={[styles.chip, { backgroundColor: Theme.colors.keptBg }]}>
-            <Text style={[styles.chipText, { color: Theme.colors.kept }]}>
-              ✅ Keeping Plan
-            </Text>
-          </View>
-        ) : (
-          <View style={[styles.chip, { backgroundColor: countdown.bgColor }]}>
-            <Text style={[styles.chipText, { color: countdown.color }]}>
-              ⏳ {countdown.label}
-            </Text>
-          </View>
-        )}
-
-        {trial.cancelLink ? (
-          <View style={styles.linkBadge}>
-            <Text style={styles.linkBadgeText}>🔗 Cancel Link</Text>
-          </View>
-        ) : (
-          <Text style={styles.hintText}>Hold to delete</Text>
-        )}
       </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Theme.colors.surface,
+  walletCard: {
     borderRadius: Theme.radius.lg,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    ...Theme.shadows.card,
+    marginBottom: 12,
+    position: 'relative',
+    overflow: 'hidden',
+    ...Theme.shadows.walletCard,
   },
   cardCancelled: {
-    opacity: 0.7,
-    backgroundColor: '#FAFAFA',
+    opacity: 0.75,
   },
-  cardHeader: {
+  cardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  cardContent: {
+    padding: 16,
+  },
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 14,
   },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: Theme.radius.full,
+  iconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Theme.spacing.md,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
-  avatarText: {
-    color: '#FFFFFF',
+  iconInitial: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
-  infoContainer: {
+  nameCol: {
     flex: 1,
   },
   serviceName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Theme.colors.textPrimary,
-    marginBottom: 3,
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   textStrikethrough: {
     textDecorationLine: 'line-through',
-    color: Theme.colors.textMuted,
+    opacity: 0.8,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaText: {
-    fontSize: 12,
-    color: Theme.colors.textSecondary,
-  },
-  priceContainer: {
-    alignItems: 'flex-end',
-    marginLeft: Theme.spacing.sm,
-  },
-  priceText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Theme.colors.textPrimary,
-  },
-  cycleText: {
+  paymentSub: {
     fontSize: 11,
-    color: Theme.colors.textMuted,
-    fontWeight: '500',
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.75)',
+    letterSpacing: 0.6,
+    marginTop: 2,
   },
-  cardFooter: {
+  priceCol: {
+    alignItems: 'flex-end',
+  },
+  priceAmount: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+  },
+  priceCycle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.75)',
+  },
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: Theme.spacing.sm + 2,
-    paddingTop: Theme.spacing.sm + 2,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: Theme.colors.borderLight,
+    borderTopColor: 'rgba(255, 255, 255, 0.18)',
+  },
+  dateInfo: {
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  dateBold: {
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   chip: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: Theme.radius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
   },
   chipText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  linkBadge: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  linkBadgeText: {
     fontSize: 11,
-    color: '#475569',
-    fontWeight: '600',
+    fontWeight: '800',
   },
-  hintText: {
-    fontSize: 11,
-    color: Theme.colors.textMuted,
-    fontStyle: 'italic',
+  chipUrgent: {
+    backgroundColor: '#FEF2F2',
+  },
+  chipTextUrgent: {
+    color: '#DC2626',
+  },
+  chipWarning: {
+    backgroundColor: '#FFFBEB',
+  },
+  chipTextWarning: {
+    color: '#B45309',
+  },
+  chipSafe: {
+    backgroundColor: '#ECFDF5',
+  },
+  chipTextSafe: {
+    color: '#047857',
+  },
+  chipCancelled: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  chipTextCancelled: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  chipKept: {
+    backgroundColor: '#DBEAFE',
+  },
+  chipTextKept: {
+    color: '#1D4ED8',
+    fontSize: 10,
+    fontWeight: '800',
   },
 });
