@@ -1,14 +1,16 @@
 // ============================================
-// NoCharge Cashtra Fintech Home Screen
+// NoCharge Home Screen (DESIGN.md)
 // ============================================
 // Features:
-// - Top Header with official 3D Logo mark & Ionicons notification bell
-// - Cashtra / Image 1 Hero Card with Circular Gauge Arc & Split Stats
-// - Horizontal Week Calendar Strip with dot indicators
-// - Monochromatic Theme-tinted Trial Cards
-// - Adaptive Dark / Light / System Mode
+// - Background gradient: --bg-gradient-start to --bg-gradient-end
+// - Top Bar: Official Bell + Shield Logo, H1 title + small muted subtitle, glass bell button
+// - Highlight Hero Card: LinearGradient (--hero-start #4EE08F to --hero-end #1DB86A) with
+//   Display Number (40/48 Manrope 800), Progress Ring (10dp stroke), and Split Stats (Active vs Estimated Saved)
+// - Horizontal Snap Carousel for "My Trials" (85% card width, peek effect, dots indicator, "View all" end card)
+// - Week Schedule strip with deadline dots
+// - Single entry point for add: Raised Center Button in TabBar (no floating button)
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -18,21 +20,30 @@ import {
   RefreshControl,
   SafeAreaView,
   Image,
+  Dimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
+import LinearGradient from '../../components/LinearGradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Trial, formatCurrency, getDaysLeft } from '../../types/trial';
 import { getTrials, deleteTrial, subscribeToTrials } from '../../services/storage';
 import { useAppTheme } from '../../context/ThemeContext';
 import TrialCard from '../../components/TrialCard';
-import FloatingAddButton from '../../components/FloatingAddButton';
+import ProgressRing from '../../components/ProgressRing';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CAROUSEL_CARD_WIDTH = Math.round(SCREEN_WIDTH * 0.84);
+const CAROUSEL_GAP = 12;
 
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const [trials, setTrials] = useState<Trial[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedDayIdx, setSelectedDayIdx] = useState(new Date().getDay()); // 0 = Sun
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [selectedDayIdx, setSelectedDayIdx] = useState(new Date().getDay());
 
   const loadData = useCallback(async () => {
     const list = await getTrials();
@@ -56,7 +67,7 @@ export default function HomeScreen() {
     await loadData();
   };
 
-  // Calculations
+  // Active & Cancelled trials
   const activeTrials = trials.filter((t) => t.status === 'active');
   const cancelledTrials = trials.filter((t) => t.status === 'cancelled');
 
@@ -81,15 +92,24 @@ export default function HomeScreen() {
     0
   );
 
-  // Sorted by nearest deadline
-  const activeSorted = [...activeTrials].sort(
-    (a, b) => getDaysLeft(a.endDate) - getDaysLeft(b.endDate)
-  );
+  // Active trials sorted by nearest deadline (max 8 for carousel)
+  const activeSorted = useMemo(() => {
+    return [...activeTrials]
+      .sort((a, b) => getDaysLeft(a.endDate) - getDaysLeft(b.endDate))
+      .slice(0, 8);
+  }, [activeTrials]);
 
   const nearestDays = activeSorted.length > 0 ? getDaysLeft(activeSorted[0].endDate) : null;
   const nearestTrial = activeSorted.length > 0 ? activeSorted[0] : null;
 
-  // Current Week Days (Sunday to Saturday)
+  // Handle Carousel Scroll Snap Index
+  const onCarouselScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offset = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offset / (CAROUSEL_CARD_WIDTH + CAROUSEL_GAP));
+    setCarouselIndex(index);
+  };
+
+  // Week Schedule
   const weekDays = useMemo(() => {
     const now = new Date();
     const currDay = now.getDay();
@@ -103,7 +123,6 @@ export default function HomeScreen() {
       const d = new Date(sunday);
       d.setDate(sunday.getDate() + i);
       const isoStr = d.toISOString().split('T')[0];
-
       const hasTrialEnding = activeTrials.some((t) => t.endDate === isoStr);
 
       days.push({
@@ -118,8 +137,11 @@ export default function HomeScreen() {
   }, [activeTrials]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={styles.container}>
+    <LinearGradient
+      colors={[colors.bgGradientStart, colors.bgGradientEnd]}
+      style={styles.gradientContainer}
+    >
+      <SafeAreaView style={styles.safeArea}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -132,102 +154,192 @@ export default function HomeScreen() {
             />
           }
         >
-          {/* Top Bar: Official Logo + App Title & Notification Button */}
+          {/* Top Bar: Bell + Shield Logo, Title, Translucent Glass Pill */}
           <View style={styles.topBar}>
             <View style={styles.brandRow}>
-              <View style={[styles.logoContainer, { backgroundColor: colors.iconContainer, borderColor: colors.borderLight }]}>
+              <View style={[styles.logoSquircle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Image
                   source={require('../../assets/images/logo.png')}
                   style={styles.logoImage}
                   resizeMode="contain"
+                  accessibilityLabel="NoCharge logo"
                 />
               </View>
               <View>
-                <Text style={[styles.brandTitle, { color: colors.textPrimary }]}>NoCharge</Text>
-                <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>
+                <Text style={[styles.brandTitle, { color: colors.text }]}>NoCharge</Text>
+                <Text style={[styles.brandSubtitle, { color: colors.textMuted }]}>
                   Smart Free Trial Tracker
                 </Text>
               </View>
             </View>
 
+            {/* Glass Pill Bell Button (Section 6: glass allowed only on small pills over gradient) */}
             <TouchableOpacity
-              style={[styles.bellButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              style={[
+                styles.glassPill,
+                {
+                  backgroundColor: isDark ? 'rgba(19, 38, 46, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+                  borderColor: colors.border,
+                },
+              ]}
               onPress={() => router.push('/notification-result')}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="View notifications"
             >
-              <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} />
-              <View style={[styles.bellDot, { backgroundColor: colors.primary }]} />
+              <Ionicons name="notifications-outline" size={20} color={colors.text} />
+              {endingIn7Days.length > 0 ? (
+                <View style={[styles.notifDot, { backgroundColor: colors.accent }]} />
+              ) : null}
             </TouchableOpacity>
           </View>
 
-          {/* Cashtra Hero Card with Circular Gauge */}
-          <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {/* Highlight Hero Card with LinearGradient (Section 3 & 6) */}
+          <LinearGradient
+            colors={[colors.heroStart, colors.heroEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
             <View style={styles.heroTopRow}>
               <View style={styles.heroTextCol}>
-                <View style={[styles.heroTagBadge, { backgroundColor: colors.primaryLight }]}>
-                  <Ionicons name="flash" size={11} color={colors.primary} style={{ marginRight: 4 }} />
-                  <Text style={[styles.heroTagText, { color: colors.primary }]}>AT RISK IN 7 DAYS</Text>
+                <View style={styles.heroTagBadge}>
+                  <Ionicons name="flash" size={12} color="#091B27" style={{ marginRight: 4 }} />
+                  <Text style={styles.heroTagText}>AT RISK IN 7 DAYS</Text>
                 </View>
-                <Text style={[styles.heroAmount, { color: colors.textPrimary }]}>
+                <Text style={styles.heroDisplayNumber}>
                   {formatCurrency(totalAtRisk7Days)}
                 </Text>
-                <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
+                <Text style={styles.heroSubtitle}>
                   {nearestTrial
                     ? `Next: ${nearestTrial.serviceName} (${getDaysLeft(nearestTrial.endDate)}d left)`
-                    : 'No upcoming charges due'}
+                    : 'No upcoming charges due 🎉'}
                 </Text>
               </View>
 
-              {/* Circular Gauge Arc */}
-              <View style={styles.gaugeContainer}>
-                <View
-                  style={[
-                    styles.gaugeArc,
-                    {
-                      borderColor: nearestDays !== null && nearestDays <= 1 ? colors.urgent : colors.primary,
-                      backgroundColor: isDark ? colors.surfaceElevated : colors.surfaceSubtle,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.gaugePercent,
-                      { color: nearestDays !== null && nearestDays <= 1 ? colors.urgent : colors.textPrimary },
-                    ]}
-                  >
-                    {nearestDays !== null ? (nearestDays < 0 ? '0' : nearestDays) : '0'}
-                  </Text>
-                  <Text style={[styles.gaugeLabel, { color: colors.textMuted }]}>
-                    {nearestDays === 1 ? 'DAY' : 'DAYS'}
-                  </Text>
-                </View>
+              {/* Progress Ring with 10dp stroke */}
+              <View style={styles.ringWrapper}>
+                <ProgressRing daysLeft={nearestDays} size={82} />
               </View>
             </View>
 
-            {/* Split Stat Row (Cashtra Style) */}
-            <View style={[styles.statSplitRow, { backgroundColor: isDark ? colors.surfaceElevated : colors.surfaceSubtle, borderColor: colors.borderLight }]}>
-              <View style={styles.statBox}>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active Plans</Text>
-                <Text style={[styles.statValue, { color: colors.textPrimary }]}>
-                  {formatCurrency(totalActiveMonthly)}
-                </Text>
+            {/* Split Stats: Active vs Estimated Saved (Section 10: always label estimated) */}
+            <View style={styles.splitStatRow}>
+              <View style={styles.splitBox}>
+                <Text style={styles.splitLabel}>ACTIVE PLANS</Text>
+                <Text style={styles.splitValue}>{formatCurrency(totalActiveMonthly)}</Text>
               </View>
-              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-              <View style={styles.statBox}>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Saved</Text>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {formatCurrency(estimatedSaved)}
-                </Text>
+              <View style={styles.splitDivider} />
+              <View style={styles.splitBox}>
+                <Text style={styles.splitLabel}>ESTIMATED SAVED</Text>
+                <Text style={styles.splitValueSaved}>{formatCurrency(estimatedSaved)}</Text>
               </View>
             </View>
+          </LinearGradient>
+
+          {/* Home Trial Carousel: "My Trials" Section (Section 6) */}
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>My Trials</Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+                Ending soonest shown first
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => router.push('/trials')} activeOpacity={0.7}>
+              <Text style={[styles.viewAllLink, { color: isDark ? colors.primary : colors.primaryStrong }]}>
+                View All ({activeTrials.length}) →
+              </Text>
+            </TouchableOpacity>
           </View>
 
+          {activeSorted.length === 0 ? (
+            <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="shield-checkmark-outline" size={44} color={colors.primary} />
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>Wala ka pang active trial</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                I-tap ang center '+' button sa ibaba para mag-record ng bagong free trial at mag-set ng reminders bago ang charge date.
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {/* Horizontal Snap Carousel */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={CAROUSEL_CARD_WIDTH + CAROUSEL_GAP}
+                decelerationRate="fast"
+                contentContainerStyle={styles.carouselContainer}
+                onScroll={onCarouselScroll}
+                scrollEventThrottle={16}
+              >
+                {activeSorted.map((trial) => (
+                  <View key={trial.id} style={{ width: CAROUSEL_CARD_WIDTH, marginRight: CAROUSEL_GAP }}>
+                    <TrialCard
+                      trial={trial}
+                      cardWidth={CAROUSEL_CARD_WIDTH}
+                      onDelete={handleDelete}
+                    />
+                  </View>
+                ))}
+
+                {/* Final "View All" Card (Section 6) */}
+                <TouchableOpacity
+                  style={[
+                    styles.viewAllCard,
+                    {
+                      width: CAROUSEL_CARD_WIDTH * 0.75,
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  onPress={() => router.push('/trials')}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.viewAllIconCircle, { backgroundColor: colors.surface2 }]}>
+                    <Ionicons
+                      name="arrow-forward"
+                      size={28}
+                      color={isDark ? colors.primary : colors.primaryStrong}
+                    />
+                  </View>
+                  <Text style={[styles.viewAllCardTitle, { color: colors.text }]}>View All Trials</Text>
+                  <Text style={[styles.viewAllCardSub, { color: colors.textMuted }]}>
+                    Manage all {trials.length} trials & subscriptions
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+
+              {/* Page Indicator Dots below Carousel */}
+              <View style={styles.dotsRow}>
+                {activeSorted.map((_, idx) => (
+                  <View
+                    key={`dot-${idx}`}
+                    style={[
+                      styles.dot,
+                      {
+                        backgroundColor:
+                          carouselIndex === idx
+                            ? colors.primary
+                            : isDark
+                            ? 'rgba(255,255,255,0.2)'
+                            : 'rgba(9,27,39,0.2)',
+                        width: carouselIndex === idx ? 16 : 6,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
           {/* Week Schedule Strip */}
-          <View style={[styles.weekStripContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.weekStripCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.weekStripHeader}>
-              <Text style={[styles.weekStripTitle, { color: colors.textPrimary }]}>This Week</Text>
+              <Text style={[styles.weekStripTitle, { color: colors.text }]}>This Week's Schedule</Text>
               <TouchableOpacity onPress={() => router.push('/calendar')} activeOpacity={0.7}>
-                <Text style={[styles.calendarLink, { color: colors.primary }]}>Calendar →</Text>
+                <Text style={[styles.calendarLink, { color: isDark ? colors.primary : colors.primaryStrong }]}>
+                  Calendar →
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -242,9 +354,7 @@ export default function HomeScreen() {
                       {
                         backgroundColor: isSelected
                           ? colors.primary
-                          : isDark
-                          ? colors.surfaceElevated
-                          : colors.surfaceSubtle,
+                          : colors.surface2,
                       },
                     ]}
                     onPress={() => setSelectedDayIdx(idx)}
@@ -252,16 +362,16 @@ export default function HomeScreen() {
                   >
                     <Text
                       style={[
-                        styles.dayPillName,
-                        { color: isSelected ? '#FFFFFF' : colors.textMuted },
+                        styles.dayName,
+                        { color: isSelected ? colors.onPrimary : colors.textMuted },
                       ]}
                     >
                       {item.dayName}
                     </Text>
                     <Text
                       style={[
-                        styles.dayPillNumber,
-                        { color: isSelected ? '#FFFFFF' : colors.textPrimary },
+                        styles.dayNumber,
+                        { color: isSelected ? colors.onPrimary : colors.text },
                       ]}
                     >
                       {item.dateNum}
@@ -269,8 +379,8 @@ export default function HomeScreen() {
                     {item.hasTrialEnding ? (
                       <View
                         style={[
-                          styles.dotIndicator,
-                          { backgroundColor: isSelected ? '#FFFFFF' : colors.urgent },
+                          styles.scheduleDot,
+                          { backgroundColor: isSelected ? colors.onPrimary : colors.danger },
                         ]}
                       />
                     ) : (
@@ -282,73 +392,37 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Section: Ending Soon */}
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Ending Soon</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                Cancel before charge date
-              </Text>
-            </View>
-            <TouchableOpacity onPress={() => router.push('/trials')} activeOpacity={0.7}>
-              <Text style={[styles.seeAllBtn, { color: colors.primary }]}>
-                See all ({activeTrials.length}) →
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {activeSorted.length === 0 ? (
-            <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="checkmark-done-circle-outline" size={48} color={colors.primary} />
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Walang active free trials!</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                I-tap ang floating '+' button para mag-record ng bagong free trial at mag-set ng reminders.
-              </Text>
-            </View>
-          ) : (
-            activeSorted.map((trial) => (
-              <TrialCard
-                key={trial.id}
-                trial={trial}
-                onDelete={handleDelete}
-              />
-            ))
-          )}
-
-          {/* Bottom spacing for FAB */}
-          <View style={{ height: 95 }} />
+          {/* Bottom spacing for CustomTabBar + Raised Center Button (Section 5) */}
+          <View style={{ height: 110 }} />
         </ScrollView>
-
-        <FloatingAddButton />
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  gradientContainer: {
     flex: 1,
   },
-  container: {
+  safeArea: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 12,
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-    marginTop: 4,
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  logoContainer: {
+  logoSquircle: {
     width: 44,
     height: 44,
     borderRadius: 14,
@@ -358,41 +432,47 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logoImage: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
   },
   brandTitle: {
-    fontSize: 19,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: -0.4,
   },
   brandSubtitle: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '400',
+    fontFamily: 'Manrope_400Regular',
     marginTop: 1,
   },
-  bellButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
+  glassPill: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  bellDot: {
+  notifDot: {
     position: 'absolute',
-    top: 9,
-    right: 9,
-    width: 7,
-    height: 7,
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
     borderRadius: 4,
   },
   heroCard: {
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 18,
-    marginBottom: 14,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#1DB86A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -402,12 +482,13 @@ const styles = StyleSheet.create({
   },
   heroTextCol: {
     flex: 1,
-    paddingRight: 10,
+    paddingRight: 12,
   },
   heroTagBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
+    backgroundColor: 'rgba(9, 27, 39, 0.14)',
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 9999,
@@ -416,71 +497,140 @@ const styles = StyleSheet.create({
   heroTagText: {
     fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    color: '#091B27',
+    fontFamily: 'Manrope_800ExtraBold',
+    letterSpacing: 0.6,
   },
-  heroAmount: {
-    fontSize: 32,
+  heroDisplayNumber: {
+    fontSize: 38,
+    lineHeight: 44,
     fontWeight: '800',
-    letterSpacing: -0.6,
+    color: '#091B27',
+    fontFamily: 'Manrope_800ExtraBold',
+    letterSpacing: -0.8,
     marginBottom: 4,
   },
   heroSubtitle: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
+    color: '#091B27',
+    opacity: 0.85,
+    fontFamily: 'Manrope_600SemiBold',
   },
-  gaugeContainer: {
+  ringWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gaugeArc: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    borderWidth: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gaugePercent: {
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 22,
-  },
-  gaugeLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    marginTop: 2,
-  },
-  statSplitRow: {
+  splitStatRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(9, 27, 39, 0.12)',
     borderRadius: 14,
-    borderWidth: 1,
     paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
   },
-  statBox: {
+  splitBox: {
     flex: 1,
     alignItems: 'center',
   },
-  statDivider: {
+  splitDivider: {
     width: 1,
-    height: 28,
+    height: 26,
+    backgroundColor: 'rgba(9, 27, 39, 0.15)',
   },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+  splitLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#091B27',
+    opacity: 0.7,
+    letterSpacing: 0.5,
+    fontFamily: 'Manrope_700Bold',
     marginBottom: 3,
   },
-  statValue: {
+  splitValue: {
     fontSize: 16,
     fontWeight: '800',
+    color: '#091B27',
+    fontFamily: 'Manrope_800ExtraBold',
   },
-  weekStripContainer: {
-    borderRadius: 18,
+  splitValueSaved: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#091B27',
+    fontFamily: 'Manrope_800ExtraBold',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+    letterSpacing: -0.3,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontWeight: '400',
+    fontFamily: 'Manrope_400Regular',
+    marginTop: 2,
+  },
+  viewAllLink: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+  },
+  carouselContainer: {
+    paddingRight: 16,
+  },
+  viewAllCard: {
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 14,
-    marginBottom: 20,
+    aspectRatio: 16 / 10,
+    minHeight: 180,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  viewAllIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  viewAllCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+    marginBottom: 4,
+  },
+  viewAllCardSub: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontFamily: 'Manrope_400Regular',
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 18,
+    marginTop: 2,
+  },
+  dot: {
+    height: 6,
+    borderRadius: 3,
+  },
+  weekStripCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 16,
   },
   weekStripHeader: {
     flexDirection: 'row',
@@ -489,12 +639,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   weekStripTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   calendarLink: {
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   weekDaysRow: {
     flexDirection: 'row',
@@ -506,57 +658,42 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  dayPillName: {
+  dayName: {
     fontSize: 11,
     fontWeight: '700',
-    marginBottom: 4,
+    fontFamily: 'Manrope_700Bold',
+    marginBottom: 3,
   },
-  dayPillNumber: {
+  dayNumber: {
     fontSize: 14,
     fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
-  dotIndicator: {
+  scheduleDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    marginTop: 5,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  seeAllBtn: {
-    fontSize: 13,
-    fontWeight: '700',
+    marginTop: 4,
   },
   emptyCard: {
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 24,
+    padding: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 20,
+    gap: 8,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    marginTop: 10,
-    marginBottom: 6,
+    fontFamily: 'Manrope_700Bold',
+    marginTop: 4,
   },
   emptySubtitle: {
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 18,
+    fontFamily: 'Manrope_400Regular',
   },
 });

@@ -1,6 +1,12 @@
 // ============================================
-// NoCharge Add / Edit Free Trial Screen (Modal)
+// NoCharge Add / Edit Free Trial Screen (Modal) — DESIGN.md
 // ============================================
+// Specs:
+// - LinearGradient background from --bg-gradient-start to --bg-gradient-end
+// - Inputs: 14dp radius, 52dp height, visible label, --surface-2 fill
+// - Buttons: 16dp radius, 52dp height, 24dp horizontal padding, --primary fill with --on-primary (#091B27) text
+// - Chips: 40dp height, fully rounded, active state uses --primary fill with --on-primary text
+// - Typography: Manrope
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -14,12 +20,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import LinearGradient from '../../components/LinearGradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BillingCycle, getDaysLeft, Trial, formatReadableDate } from '../../types/trial';
 import { saveTrial, updateTrial, getTrialById, getPaletteColor } from '../../services/storage';
 import { useAppTheme } from '../../context/ThemeContext';
+import { getServiceColor } from '../../constants/theme';
 
 export default function AddTrialScreen() {
   const router = useRouter();
@@ -66,7 +74,7 @@ export default function AddTrialScreen() {
     setSelectedShortcut(label);
     const base = startDate ? new Date(startDate) : new Date();
     const d = new Date(base);
-    
+
     if (days > 0) d.setDate(d.getDate() + days);
     if (months > 0) d.setMonth(d.getMonth() + months);
     if (years > 0) d.setFullYear(d.getFullYear() + years);
@@ -128,7 +136,7 @@ export default function AddTrialScreen() {
           paymentLabel: paymentLabel.trim() || undefined,
           notes: notes.trim() || undefined,
           reminderOffsetsDays: reminderOffsets,
-          color: getPaletteColor(Math.floor(Math.random() * 8)),
+          color: getServiceColor(serviceName.trim()),
         };
         await saveTrial(newTrial);
       }
@@ -144,41 +152,54 @@ export default function AddTrialScreen() {
   const daysLeft = endDate ? getDaysLeft(endDate) : null;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 20) }]}>
+    <LinearGradient
+      colors={[colors.bgGradientStart, colors.bgGradientEnd]}
+      style={styles.gradient}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: Math.max(insets.top, 20) },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* Header Row */}
-          <View style={[styles.headerRow, { borderBottomColor: colors.borderLight }]}>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              {existingTrial ? 'Edit Free Trial' : 'Add Free Trial'}
-            </Text>
+          <View style={[styles.headerRow, { borderBottomColor: colors.border }]}>
+            <View>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>
+                {existingTrial ? 'Edit Free Trial' : 'Add Free Trial'}
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+                We'll notify you before you get charged.
+              </Text>
+            </View>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={[styles.closeBtn, { backgroundColor: isDark ? colors.surfaceElevated : colors.surfaceSubtle }]}
+              style={[styles.closeBtn, { backgroundColor: colors.surface2 }]}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
             >
-              <Ionicons name="close" size={20} color={colors.textPrimary} />
+              <Ionicons name="close" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           {/* Service Name */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>
-              SERVICE NAME <Text style={styles.required}>*</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>
+              SERVICE NAME <Text style={{ color: colors.danger }}>*</Text>
             </Text>
             <TextInput
               style={[
                 styles.input,
                 {
-                  backgroundColor: colors.surface,
+                  backgroundColor: colors.surface2,
                   borderColor: colors.border,
-                  color: colors.textPrimary,
+                  color: colors.text,
                 },
               ]}
               placeholder="e.g. Netflix, YouTube Premium, Claude AI"
@@ -189,9 +210,9 @@ export default function AddTrialScreen() {
             />
           </View>
 
-          {/* Quick Shortcuts */}
+          {/* Quick Trial Duration Shortcuts */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>QUICK TRIAL DURATION</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>QUICK TRIAL DURATION</Text>
             <View style={styles.shortcutsRow}>
               {[
                 { label: '7 Days', days: 7 },
@@ -207,11 +228,7 @@ export default function AddTrialScreen() {
                     style={[
                       styles.shortcutChip,
                       {
-                        backgroundColor: isActive
-                          ? colors.primaryLight
-                          : isDark
-                          ? colors.surfaceElevated
-                          : colors.surfaceSubtle,
+                        backgroundColor: isActive ? colors.primary : colors.surface2,
                         borderColor: isActive ? colors.primary : colors.border,
                       },
                     ]}
@@ -221,7 +238,7 @@ export default function AddTrialScreen() {
                     <Text
                       style={[
                         styles.shortcutChipText,
-                        { color: isActive ? colors.primary : colors.textSecondary },
+                        { color: isActive ? colors.onPrimary : colors.text },
                       ]}
                     >
                       {sc.label}
@@ -234,16 +251,16 @@ export default function AddTrialScreen() {
 
           {/* End Date */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>
-              CHARGE DATE (END OF TRIAL) <Text style={styles.required}>*</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>
+              CHARGE DATE (END OF TRIAL) <Text style={{ color: colors.danger }}>*</Text>
             </Text>
             <TextInput
               style={[
                 styles.input,
                 {
-                  backgroundColor: colors.surface,
+                  backgroundColor: colors.surface2,
                   borderColor: colors.border,
-                  color: colors.textPrimary,
+                  color: colors.text,
                 },
               ]}
               placeholder="YYYY-MM-DD"
@@ -255,7 +272,12 @@ export default function AddTrialScreen() {
               }}
             />
             {endDate ? (
-              <Text style={[styles.hintDate, { color: colors.primary }]}>
+              <Text
+                style={[
+                  styles.hintDate,
+                  { color: isDark ? colors.primary : colors.primaryStrong },
+                ]}
+              >
                 Charge date: {formatReadableDate(endDate)} ({daysLeft !== null ? `${daysLeft} days left` : ''})
               </Text>
             ) : null}
@@ -263,14 +285,14 @@ export default function AddTrialScreen() {
 
           {/* Price */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>PRICE AFTER TRIAL (PHP ₱)</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>PRICE AFTER TRIAL (PHP ₱)</Text>
             <TextInput
               style={[
                 styles.input,
                 {
-                  backgroundColor: colors.surface,
+                  backgroundColor: colors.surface2,
                   borderColor: colors.border,
-                  color: colors.textPrimary,
+                  color: colors.text,
                 },
               ]}
               placeholder="e.g. 549"
@@ -283,7 +305,7 @@ export default function AddTrialScreen() {
 
           {/* Billing Cycle */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>BILLING CYCLE</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>BILLING CYCLE</Text>
             <View style={styles.cycleRow}>
               {[
                 { key: 'monthly', label: 'Monthly' },
@@ -297,11 +319,7 @@ export default function AddTrialScreen() {
                     style={[
                       styles.cycleChip,
                       {
-                        backgroundColor: isActive
-                          ? colors.primary
-                          : isDark
-                          ? colors.surfaceElevated
-                          : colors.surfaceSubtle,
+                        backgroundColor: isActive ? colors.primary : colors.surface2,
                         borderColor: isActive ? colors.primary : colors.border,
                       },
                     ]}
@@ -311,7 +329,7 @@ export default function AddTrialScreen() {
                     <Text
                       style={[
                         styles.cycleChipText,
-                        { color: isActive ? '#FFFFFF' : colors.textSecondary },
+                        { color: isActive ? colors.onPrimary : colors.text },
                       ]}
                     >
                       {cycle.label}
@@ -324,14 +342,16 @@ export default function AddTrialScreen() {
 
           {/* Cancel Page Link */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>CANCEL PAGE LINK (OPTIONAL)</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>
+              CANCEL PAGE LINK (OPTIONAL)
+            </Text>
             <TextInput
               style={[
                 styles.input,
                 {
-                  backgroundColor: colors.surface,
+                  backgroundColor: colors.surface2,
                   borderColor: colors.border,
-                  color: colors.textPrimary,
+                  color: colors.text,
                 },
               ]}
               placeholder="e.g. https://netflix.com/youraccount"
@@ -345,17 +365,19 @@ export default function AddTrialScreen() {
 
           {/* Payment Method Tag */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>CARD / PAYMENT METHOD</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>
+              CARD / PAYMENT METHOD LABEL
+            </Text>
             <TextInput
               style={[
                 styles.input,
                 {
-                  backgroundColor: colors.surface,
+                  backgroundColor: colors.surface2,
                   borderColor: colors.border,
-                  color: colors.textPrimary,
+                  color: colors.text,
                 },
               ]}
-              placeholder="e.g. Maya, GCash, BPI Visa"
+              placeholder="e.g. Maya, GCash, BPI card (no digits)"
               placeholderTextColor={colors.textMuted}
               value={paymentLabel}
               onChangeText={setPaymentLabel}
@@ -364,7 +386,7 @@ export default function AddTrialScreen() {
 
           {/* Reminder Offsets */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>REMIND ME BEFORE CHARGE</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>REMIND ME BEFORE CHARGE</Text>
             <View style={styles.shortcutsRow}>
               {[
                 { days: 7, label: '7 days before' },
@@ -379,11 +401,7 @@ export default function AddTrialScreen() {
                     style={[
                       styles.shortcutChip,
                       {
-                        backgroundColor: isSelected
-                          ? colors.primaryLight
-                          : isDark
-                          ? colors.surfaceElevated
-                          : colors.surfaceSubtle,
+                        backgroundColor: isSelected ? colors.primary : colors.surface2,
                         borderColor: isSelected ? colors.primary : colors.border,
                       },
                     ]}
@@ -393,7 +411,7 @@ export default function AddTrialScreen() {
                     <Text
                       style={[
                         styles.shortcutChipText,
-                        { color: isSelected ? colors.primary : colors.textSecondary },
+                        { color: isSelected ? colors.onPrimary : colors.text },
                       ]}
                     >
                       {isSelected ? '✓ ' : ''}{opt.label}
@@ -406,15 +424,15 @@ export default function AddTrialScreen() {
 
           {/* Notes */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>NOTES</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>NOTES</Text>
             <TextInput
               style={[
                 styles.input,
                 styles.textArea,
                 {
-                  backgroundColor: colors.surface,
+                  backgroundColor: colors.surface2,
                   borderColor: colors.border,
-                  color: colors.textPrimary,
+                  color: colors.text,
                 },
               ]}
               placeholder="e.g. Sign up using work email, cancel before Nov 20"
@@ -426,14 +444,20 @@ export default function AddTrialScreen() {
             />
           </View>
 
-          {/* Submit Button */}
+          {/* Submit Button (52dp height, 16dp radius, 24dp padding, filled --primary with --on-primary text) */}
           <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: colors.primary }, isSubmitting && styles.saveBtnDisabled]}
+            style={[
+              styles.saveBtn,
+              { backgroundColor: colors.primary },
+              isSubmitting && styles.saveBtnDisabled,
+            ]}
             onPress={handleSave}
             disabled={isSubmitting}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={existingTrial ? 'Save Changes' : 'Save Free Trial'}
           >
-            <Text style={styles.saveBtnText}>
+            <Text style={[styles.saveBtnText, { color: colors.onPrimary }]}>
               {isSubmitting
                 ? 'Saving...'
                 : existingTrial
@@ -445,65 +469,73 @@ export default function AddTrialScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradient: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingBottom: 24,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 18,
-    paddingBottom: 10,
+    marginBottom: 20,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    fontWeight: '400',
+    fontFamily: 'Manrope_400Regular',
+    marginTop: 2,
   },
   inputGroup: {
     marginBottom: 16,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: 0.6,
     marginBottom: 6,
-  },
-  required: {
-    color: '#EF4444',
   },
   input: {
     borderWidth: 1,
     borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    height: 52,
     fontSize: 15,
+    fontFamily: 'Manrope_500Medium',
   },
   textArea: {
-    minHeight: 80,
+    height: 90,
+    paddingTop: 12,
     textAlignVertical: 'top',
   },
   hintDate: {
     fontSize: 12,
     fontWeight: '600',
-    marginTop: 4,
+    fontFamily: 'Manrope_600SemiBold',
+    marginTop: 6,
   },
   shortcutsRow: {
     flexDirection: 'row',
@@ -511,14 +543,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shortcutChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    height: 40,
+    paddingHorizontal: 16,
     borderRadius: 9999,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shortcutChipText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   cycleRow: {
     flexDirection: 'row',
@@ -526,34 +561,37 @@ const styles = StyleSheet.create({
   },
   cycleChip: {
     flex: 1,
+    height: 44,
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'center',
     borderRadius: 12,
     borderWidth: 1,
   },
   cycleChipText: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   saveBtn: {
-    paddingVertical: 16,
+    height: 52,
+    paddingHorizontal: 24,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
-    shadowColor: '#00C06A',
+    marginTop: 12,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   saveBtnDisabled: {
     opacity: 0.6,
   },
   saveBtnText: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     letterSpacing: -0.2,
   },
 });

@@ -1,6 +1,13 @@
 // ============================================
-// NoCharge Trial Detail Screen
+// NoCharge Trial Detail Screen — DESIGN.md
 // ============================================
+// Specs:
+// - LinearGradient background from --bg-gradient-start to --bg-gradient-end
+// - Hero card with initial circle, status badge, big price (Display 40dp, 800)
+// - "Open Cancel Page": 52dp height, 16dp radius, 24dp padding, filled --primary with --on-primary (#091B27) text
+// - Decision buttons: 52dp height, 16dp radius
+// - Cards with 20dp radius, --surface fill, --border border
+// - Typography: Manrope
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -11,8 +18,8 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
-  Platform,
 } from 'react-native';
+import LinearGradient from '../../components/LinearGradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +31,7 @@ import {
 } from '../../types/trial';
 import { getTrialById, updateTrial, deleteTrial, subscribeToTrials } from '../../services/storage';
 import { useAppTheme } from '../../context/ThemeContext';
+import { getServiceColor } from '../../constants/theme';
 
 export default function TrialDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,27 +54,34 @@ export default function TrialDetailScreen() {
 
   if (!trial) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 20 }]}>
+      <LinearGradient
+        colors={[colors.bgGradientStart, colors.bgGradientEnd]}
+        style={[styles.gradient, { paddingTop: insets.top + 20 }]}
+      >
         <View style={styles.notFoundContainer}>
-          <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>Trial not found or deleted.</Text>
+          <Text style={[styles.notFoundText, { color: colors.textMuted }]}>
+            Trial not found or deleted.
+          </Text>
           <TouchableOpacity
             style={[styles.backBtn, { backgroundColor: colors.primary }]}
             onPress={() => router.back()}
           >
-            <Text style={styles.backBtnText}>← Back to list</Text>
+            <Text style={[styles.backBtnText, { color: colors.onPrimary }]}>← Back to list</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
     );
   }
 
   const countdown = getCountdownInfo(trial.endDate);
+  const initial = trial.serviceName.trim().charAt(0).toUpperCase() || '?';
+  const svcColor = trial.color || getServiceColor(trial.serviceName);
 
   const handleOpenCancelPage = async () => {
     if (!trial.cancelLink) {
       Alert.alert(
         'No Cancel Link',
-        'Wala pang nilagay na cancel link para sa trial na ito. I-edit ang trial para maglagay ng direct link.'
+        'Wala pang nilagay na cancel link para sa trial na ito. Pindutin ang Edit para maglagay ng direct link.'
       );
       return;
     }
@@ -165,74 +180,160 @@ export default function TrialDetailScreen() {
   const isKept = trial.status === 'kept';
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 24) }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <LinearGradient
+      colors={[colors.bgGradientStart, colors.bgGradientEnd]}
+      style={styles.gradient}
+    >
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Math.max(insets.top, 20) },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Navigation Bar */}
         <View style={styles.navBar}>
           <TouchableOpacity
             onPress={() => router.back()}
-            style={[styles.navBackBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            style={[
+              styles.navBackBtn,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
           >
-            <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
-            <Text style={[styles.navBackText, { color: colors.textPrimary }]}>Back</Text>
+            <Ionicons name="chevron-back" size={18} color={colors.text} />
+            <Text style={[styles.navBackText, { color: colors.text }]}>Back</Text>
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity
               onPress={() => router.push(`/trials/add?editId=${trial.id}` as any)}
-              style={[styles.navEditBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              style={[
+                styles.navEditBtn,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Edit trial"
             >
-              <Ionicons name="create-outline" size={16} color={colors.primary} />
-              <Text style={[styles.navEditText, { color: colors.primary }]}>Edit</Text>
+              <Ionicons
+                name="create-outline"
+                size={16}
+                color={isDark ? colors.primary : colors.primaryStrong}
+              />
+              <Text
+                style={[
+                  styles.navEditText,
+                  { color: isDark ? colors.primary : colors.primaryStrong },
+                ]}
+              >
+                Edit
+              </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={handleDelete}
-              style={[styles.navDeleteBtn, { backgroundColor: colors.urgentBg }]}
+              style={[
+                styles.navDeleteBtn,
+                {
+                  backgroundColor: isDark ? colors.surface2 : 'rgba(217, 45, 32, 0.12)',
+                },
+              ]}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Delete trial"
             >
-              <Ionicons name="trash-outline" size={16} color={colors.urgent} />
+              <Ionicons name="trash-outline" size={16} color={colors.danger} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Hero Card */}
-        <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.avatarCircle, { backgroundColor: colors.iconContainer, borderColor: colors.borderLight }]}>
-            <Ionicons name="card-outline" size={32} color={colors.iconColor} />
+        <View
+          style={[
+            styles.heroCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          {/* Initial Circle */}
+          <View style={[styles.avatarCircle, { backgroundColor: svcColor }]}>
+            <Text style={styles.avatarText}>{initial}</Text>
           </View>
 
-          <Text style={[styles.serviceName, { color: colors.textPrimary }]}>{trial.serviceName}</Text>
+          <Text style={[styles.serviceName, { color: colors.text }]}>{trial.serviceName}</Text>
 
-          {/* Status badge */}
+          {/* Status Badge */}
           {isCancelled ? (
-            <View style={[styles.statusBadge, { backgroundColor: colors.cancelledBg }]}>
-              <Ionicons name="close-circle-outline" size={14} color={colors.cancelled} style={{ marginRight: 4 }} />
-              <Text style={[styles.statusBadgeText, { color: colors.cancelled }]}>CANCELLED</Text>
-            </View>
-          ) : isKept ? (
-            <View style={[styles.statusBadge, { backgroundColor: colors.keptBg }]}>
-              <Ionicons name="checkmark-circle-outline" size={14} color={colors.kept} style={{ marginRight: 4 }} />
-              <Text style={[styles.statusBadgeText, { color: colors.kept }]}>KEPT (SUBSCRIBED)</Text>
-            </View>
-          ) : (
             <View
               style={[
                 styles.statusBadge,
-                { backgroundColor: countdown.isUrgent ? colors.urgentBg : colors.primaryLight },
+                { backgroundColor: isDark ? colors.surface2 : '#E8F8EE' },
               ]}
             >
               <Ionicons
-                name="time-outline"
+                name="checkmark-circle"
                 size={14}
-                color={countdown.isUrgent ? colors.urgent : colors.primary}
+                color={isDark ? colors.primary : colors.primaryStrong}
                 style={{ marginRight: 4 }}
               />
               <Text
                 style={[
                   styles.statusBadgeText,
-                  { color: countdown.isUrgent ? colors.urgent : colors.primary },
+                  { color: isDark ? colors.primary : colors.primaryStrong },
+                ]}
+              >
+                CANCELLED
+              </Text>
+            </View>
+          ) : isKept ? (
+            <View style={[styles.statusBadge, { backgroundColor: colors.surface2 }]}>
+              <Ionicons
+                name="checkmark"
+                size={14}
+                color={colors.text}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={[styles.statusBadgeText, { color: colors.text }]}>
+                KEPT (SUBSCRIBED)
+              </Text>
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor: countdown.isUrgent
+                    ? colors.accent
+                    : isDark
+                    ? colors.surface2
+                    : '#E8F8EE',
+                },
+              ]}
+            >
+              <Ionicons
+                name="time-outline"
+                size={14}
+                color={
+                  countdown.isUrgent
+                    ? colors.onAccent
+                    : isDark
+                    ? colors.primary
+                    : colors.primaryStrong
+                }
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  {
+                    color: countdown.isUrgent
+                      ? colors.onAccent
+                      : isDark
+                      ? colors.primary
+                      : colors.primaryStrong,
+                  },
                 ]}
               >
                 {countdown.label.toUpperCase()}
@@ -240,16 +341,20 @@ export default function TrialDetailScreen() {
             </View>
           )}
 
-          {/* Big price display */}
+          {/* Big Price Display (Display 40dp, 800) */}
           <View style={styles.priceHeroRow}>
-            <Text style={[styles.priceHero, { color: colors.textPrimary }]}>
+            <Text style={[styles.priceHero, { color: colors.text }]}>
               {formatCurrency(trial.priceAfterTrial)}
             </Text>
             <Text style={[styles.cycleHero, { color: colors.textMuted }]}>
-              {trial.billingCycle === 'monthly' ? ' / month' : trial.billingCycle === 'yearly' ? ' / year' : ' one-time'}
+              {trial.billingCycle === 'monthly'
+                ? ' / month'
+                : trial.billingCycle === 'yearly'
+                ? ' / year'
+                : ' one-time'}
             </Text>
           </View>
-          <Text style={[styles.chargeNotice, { color: colors.textSecondary }]}>
+          <Text style={[styles.chargeNotice, { color: colors.textMuted }]}>
             {isCancelled
               ? 'No charges will be made. You cancelled this trial.'
               : isKept
@@ -258,95 +363,164 @@ export default function TrialDetailScreen() {
           </Text>
         </View>
 
-        {/* Primary Action Button: Open Cancel Page */}
+        {/* Primary Action Button: Open Cancel Page (52dp, 16dp radius, filled --primary with --on-primary text) */}
         <TouchableOpacity
           style={[
             styles.primaryCancelPageBtn,
-            { backgroundColor: trial.cancelLink ? colors.primary : colors.surfaceSubtle },
-            !trial.cancelLink && { borderColor: colors.border, borderWidth: 1 },
+            {
+              backgroundColor: trial.cancelLink ? colors.primary : colors.surface2,
+              borderColor: trial.cancelLink ? colors.primary : colors.border,
+            },
           ]}
           onPress={handleOpenCancelPage}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Open cancel page"
         >
           <Ionicons
             name={trial.cancelLink ? 'open-outline' : 'link-outline'}
             size={18}
-            color={trial.cancelLink ? '#FFFFFF' : colors.textMuted}
+            color={trial.cancelLink ? colors.onPrimary : colors.textMuted}
             style={{ marginRight: 8 }}
           />
           <Text
             style={[
               styles.primaryCancelPageText,
-              { color: trial.cancelLink ? '#FFFFFF' : colors.textMuted },
+              { color: trial.cancelLink ? colors.onPrimary : colors.textMuted },
             ]}
           >
             {trial.cancelLink ? 'Open Cancel Page' : 'No Cancel Link Added'}
           </Text>
         </TouchableOpacity>
 
-        {/* Decision Buttons */}
+        {/* Decision Buttons (52dp height) */}
         {!isCancelled && !isKept ? (
           <View style={styles.decisionRow}>
             <TouchableOpacity
-              style={[styles.decisionBtn, { backgroundColor: colors.urgentBg, borderColor: colors.urgent }]}
+              style={[
+                styles.decisionBtn,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.danger,
+                },
+              ]}
               onPress={handleMarkCancelled}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Mark as cancelled"
             >
-              <Ionicons name="close-circle-outline" size={17} color={colors.urgent} style={{ marginRight: 6 }} />
-              <Text style={[styles.decisionBtnText, { color: colors.urgent }]}>Cancelled na</Text>
+              <Ionicons
+                name="close-circle-outline"
+                size={18}
+                color={colors.danger}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.decisionBtnText, { color: colors.danger }]}>
+                Cancelled na
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.decisionBtn, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+              style={[
+                styles.decisionBtn,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: isDark ? colors.primary : colors.primaryStrong,
+                },
+              ]}
               onPress={handleMarkKept}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Keep subscription"
             >
-              <Ionicons name="checkmark-circle-outline" size={17} color={colors.primary} style={{ marginRight: 6 }} />
-              <Text style={[styles.decisionBtnText, { color: colors.primary }]}>Itutuloy ko</Text>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={18}
+                color={isDark ? colors.primary : colors.primaryStrong}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.decisionBtnText,
+                  { color: isDark ? colors.primary : colors.primaryStrong },
+                ]}
+              >
+                Itutuloy ko
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.reactivateBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            style={[
+              styles.reactivateBtn,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
             onPress={handleReactivate}
             activeOpacity={0.8}
           >
-            <Ionicons name="refresh-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.reactivateBtnText, { color: colors.primary }]}>Re-activate Reminders</Text>
+            <Ionicons
+              name="refresh-outline"
+              size={18}
+              color={isDark ? colors.primary : colors.primaryStrong}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                styles.reactivateBtnText,
+                { color: isDark ? colors.primary : colors.primaryStrong },
+              ]}
+            >
+              Re-activate Reminders
+            </Text>
           </TouchableOpacity>
         )}
 
         {/* Details Card */}
-        <View style={[styles.detailsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.detailsSectionTitle, { color: colors.textMuted }]}>SUBSCRIPTION DETAILS</Text>
+        <View
+          style={[
+            styles.detailsCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.detailsSectionTitle, { color: colors.textMuted }]}>
+            SUBSCRIPTION DETAILS
+          </Text>
 
           <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Charge Date</Text>
-            <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{formatReadableDate(trial.endDate)}</Text>
+            <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Charge Date</Text>
+            <Text style={[styles.detailValue, { color: colors.text }]}>
+              {formatReadableDate(trial.endDate)}
+            </Text>
           </View>
 
-          <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           {trial.startDate ? (
             <>
               <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Started On</Text>
-                <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{formatReadableDate(trial.startDate)}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Started On</Text>
+                <Text style={[styles.detailValue, { color: colors.text }]}>
+                  {formatReadableDate(trial.startDate)}
+                </Text>
               </View>
-              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
             </>
           ) : null}
 
           <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Payment Method</Text>
-            <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{trial.paymentLabel || 'Not specified'}</Text>
+            <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Payment Method</Text>
+            <Text style={[styles.detailValue, { color: colors.text }]}>
+              {trial.paymentLabel || 'Not specified'}
+            </Text>
           </View>
 
-          <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Reminders Scheduled</Text>
-            <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+            <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
+              Reminders Scheduled
+            </Text>
+            <Text style={[styles.detailValue, { color: colors.text }]}>
               {trial.status === 'active'
                 ? `${trial.reminderOffsetsDays?.length || 3} alerts (3d, 1d, 0d)`
                 : 'Turned off (Not active)'}
@@ -355,10 +529,12 @@ export default function TrialDetailScreen() {
 
           {trial.notes ? (
             <>
-              <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <View style={[styles.detailRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
-                <Text style={[styles.detailLabel, { color: colors.textSecondary, marginBottom: 4 }]}>Notes</Text>
-                <Text style={[styles.notesText, { color: colors.textPrimary }]}>{trial.notes}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textMuted, marginBottom: 4 }]}>
+                  Notes
+                </Text>
+                <Text style={[styles.notesText, { color: colors.text }]}>{trial.notes}</Text>
               </View>
             </>
           ) : null}
@@ -366,12 +542,12 @@ export default function TrialDetailScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradient: {
     flex: 1,
   },
   scrollContent: {
@@ -384,16 +560,19 @@ const styles = StyleSheet.create({
   },
   notFoundText: {
     fontSize: 16,
+    fontFamily: 'Manrope_500Medium',
     marginBottom: 16,
   },
   backBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 20,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backBtnText: {
-    color: '#FFFFFF',
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   navBar: {
     flexDirection: 'row',
@@ -405,8 +584,8 @@ const styles = StyleSheet.create({
   navBackBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    height: 40,
     borderRadius: 12,
     borderWidth: 1,
     gap: 4,
@@ -414,12 +593,13 @@ const styles = StyleSheet.create({
   navBackText: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   navEditBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    height: 40,
     borderRadius: 12,
     borderWidth: 1,
     gap: 4,
@@ -427,16 +607,17 @@ const styles = StyleSheet.create({
   navEditText: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   navDeleteBtn: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroCard: {
-    borderRadius: 22,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 24,
     alignItems: 'center',
@@ -446,14 +627,20 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
-  serviceName: {
-    fontSize: 22,
+  avatarText: {
+    fontSize: 28,
     fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
+    color: '#091B27',
+  },
+  serviceName: {
+    fontSize: 24,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: -0.4,
     marginBottom: 8,
     textAlign: 'center',
@@ -467,8 +654,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: 0.5,
   },
   priceHeroRow: {
@@ -477,36 +665,43 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   priceHero: {
-    fontSize: 32,
+    fontSize: 36,
+    lineHeight: 44,
     fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     letterSpacing: -0.6,
   },
   cycleHero: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
-    marginLeft: 4,
+    fontFamily: 'Manrope_500Medium',
+    marginLeft: 6,
   },
   chargeNotice: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '400',
+    fontFamily: 'Manrope_400Regular',
     textAlign: 'center',
   },
   primaryCancelPageBtn: {
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 15,
+    paddingHorizontal: 24,
     borderRadius: 16,
+    borderWidth: 1,
     marginBottom: 12,
-    shadowColor: '#00C06A',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   primaryCancelPageText: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   decisionRow: {
     flexDirection: 'row',
@@ -515,38 +710,42 @@ const styles = StyleSheet.create({
   },
   decisionBtn: {
     flex: 1,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 13,
-    borderRadius: 14,
-    borderWidth: 1,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
   },
   decisionBtnText: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   reactivateBtn: {
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 13,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     marginBottom: 16,
   },
   reactivateBtnText: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   detailsCard: {
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 18,
   },
   detailsSectionTitle: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: 0.8,
     marginBottom: 14,
   },
@@ -558,11 +757,13 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '400',
+    fontFamily: 'Manrope_400Regular',
   },
   detailValue: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   divider: {
     height: 1,
@@ -571,5 +772,6 @@ const styles = StyleSheet.create({
   notesText: {
     fontSize: 13,
     lineHeight: 18,
+    fontFamily: 'Manrope_400Regular',
   },
 });

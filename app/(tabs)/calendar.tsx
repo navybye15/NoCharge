@@ -1,6 +1,13 @@
 // ============================================
-// NoCharge Calendar Screen (Tab 3)
+// NoCharge Calendar Screen (Tab 3) — DESIGN.md
 // ============================================
+// Specs:
+// - LinearGradient background from --bg-gradient-start to --bg-gradient-end
+// - Manrope typography
+// - Days with expiring trials have small dot indicators using the service's color
+// - Selected date is highlighted in --accent (#FFEB1A) with --on-accent (#091B27) text
+// - Selected date trials list uses TrialCard
+// - Bottom padding 110dp to clear the 64dp tab bar + 24dp button overhang
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -11,10 +18,12 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
+import LinearGradient from '../../components/LinearGradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Trial, formatReadableDate } from '../../types/trial';
 import { getTrials, subscribeToTrials } from '../../services/storage';
 import { useAppTheme } from '../../context/ThemeContext';
+import { getServiceColor } from '../../constants/theme';
 import TrialCard from '../../components/TrialCard';
 
 export default function CalendarScreen() {
@@ -80,136 +89,231 @@ export default function CalendarScreen() {
   const selectedTrials = trialsByDate[selectedDateStr] || [];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Month Navigation Card */}
-        <View style={[styles.calendarCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.monthHeader}>
-            <TouchableOpacity
-              onPress={prevMonth}
-              style={[styles.navButton, { backgroundColor: isDark ? colors.surfaceElevated : colors.surfaceSubtle, borderColor: colors.borderLight }]}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={[styles.monthTitle, { color: colors.textPrimary }]}>{monthName}</Text>
+    <LinearGradient
+      colors={[colors.bgGradientStart, colors.bgGradientEnd]}
+      style={styles.gradient}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Calendar</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+              Plan ahead and spot upcoming charge dates.
+            </Text>
+          </View>
+
+          {/* Month Navigation Card */}
+          <View
+            style={[
+              styles.calendarCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <View style={styles.monthHeader}>
               <TouchableOpacity
-                onPress={() => {
-                  const now = new Date();
-                  setCurrentDate(now);
-                  setSelectedDateStr(now.toISOString().split('T')[0]);
-                }}
-                style={[styles.todayBtn, { backgroundColor: colors.primaryLight }]}
+                onPress={prevMonth}
+                style={[
+                  styles.navButton,
+                  { backgroundColor: colors.surface2, borderColor: colors.border },
+                ]}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Previous month"
               >
-                <Text style={[styles.todayBtnText, { color: colors.primary }]}>Today</Text>
+                <Ionicons name="chevron-back" size={18} color={colors.text} />
               </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              onPress={nextMonth}
-              style={[styles.navButton, { backgroundColor: isDark ? colors.surfaceElevated : colors.surfaceSubtle, borderColor: colors.borderLight }]}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-forward" size={18} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
 
-          {/* Weekday Labels */}
-          <View style={styles.weekRow}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-              <Text key={d} style={[styles.weekLabel, { color: colors.textMuted }]}>
-                {d}
-              </Text>
-            ))}
-          </View>
-
-          {/* Calendar Day Grid */}
-          <View style={styles.daysGrid}>
-            {daysGrid.map((day, idx) => {
-              if (day === null) {
-                return <View key={`empty-${idx}`} style={styles.dayCell} />;
-              }
-
-              const mStr = String(month + 1).padStart(2, '0');
-              const dStr = String(day).padStart(2, '0');
-              const cellDateStr = `${year}-${mStr}-${dStr}`;
-
-              const isSelected = selectedDateStr === cellDateStr;
-              const cellTrials = trialsByDate[cellDateStr] || [];
-              const hasTrials = cellTrials.length > 0;
-
-              return (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={[styles.monthTitle, { color: colors.text }]}>{monthName}</Text>
                 <TouchableOpacity
-                  key={`day-${day}`}
+                  onPress={() => {
+                    const now = new Date();
+                    setCurrentDate(now);
+                    setSelectedDateStr(now.toISOString().split('T')[0]);
+                  }}
                   style={[
-                    styles.dayCell,
-                    isSelected && [styles.dayCellSelected, { backgroundColor: colors.primary }],
+                    styles.todayBtn,
+                    { backgroundColor: isDark ? colors.surface2 : '#E8F8EE' },
                   ]}
-                  onPress={() => setSelectedDateStr(cellDateStr)}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Jump to today"
                 >
                   <Text
                     style={[
-                      styles.dayNumber,
-                      { color: isSelected ? '#FFFFFF' : colors.textPrimary },
-                      isSelected && styles.dayNumberSelected,
+                      styles.todayBtnText,
+                      { color: isDark ? colors.primary : colors.primaryStrong },
                     ]}
                   >
-                    {day}
+                    Today
                   </Text>
-                  {hasTrials ? (
-                    <View style={styles.dotsRow}>
-                      <View
-                        style={[
-                          styles.dot,
-                          { backgroundColor: isSelected ? '#FFFFFF' : colors.urgent },
-                        ]}
-                      />
-                    </View>
-                  ) : (
-                    <View style={{ height: 4 }} />
-                  )}
                 </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+              </View>
 
-        {/* Selected Date Details */}
-        <View style={styles.detailsHeader}>
-          <Text style={[styles.detailsTitle, { color: colors.textPrimary }]}>
-            Due on {formatReadableDate(selectedDateStr)}
-          </Text>
-          <View style={[styles.detailsBadge, { backgroundColor: colors.primaryLight }]}>
-            <Text style={[styles.detailsBadgeText, { color: colors.primary }]}>{selectedTrials.length}</Text>
-          </View>
-        </View>
+              <TouchableOpacity
+                onPress={nextMonth}
+                style={[
+                  styles.navButton,
+                  { backgroundColor: colors.surface2, borderColor: colors.border },
+                ]}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Next month"
+              >
+                <Ionicons name="chevron-forward" size={18} color={colors.text} />
+              </TouchableOpacity>
+            </View>
 
-        {selectedTrials.length === 0 ? (
-          <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Ionicons name="calendar-outline" size={32} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              Walang trial na matatapos sa araw na ito.
+            {/* Weekday Labels */}
+            <View style={styles.weekRow}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                <Text key={d} style={[styles.weekLabel, { color: colors.textMuted }]}>
+                  {d}
+                </Text>
+              ))}
+            </View>
+
+            {/* Calendar Day Grid */}
+            <View style={styles.daysGrid}>
+              {daysGrid.map((day, idx) => {
+                if (day === null) {
+                  return <View key={`empty-${idx}`} style={styles.dayCell} />;
+                }
+
+                const mStr = String(month + 1).padStart(2, '0');
+                const dStr = String(day).padStart(2, '0');
+                const cellDateStr = `${year}-${mStr}-${dStr}`;
+
+                const isSelected = selectedDateStr === cellDateStr;
+                const cellTrials = trialsByDate[cellDateStr] || [];
+                const hasTrials = cellTrials.length > 0;
+
+                return (
+                  <TouchableOpacity
+                    key={`day-${day}`}
+                    style={[
+                      styles.dayCell,
+                      isSelected && [styles.dayCellSelected, { backgroundColor: colors.accent }],
+                    ]}
+                    onPress={() => setSelectedDateStr(cellDateStr)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={`${monthName} ${day}${
+                      hasTrials ? `, ${cellTrials.length} trials due` : ''
+                    }`}
+                  >
+                    <Text
+                      style={[
+                        styles.dayNumber,
+                        { color: isSelected ? colors.onAccent : colors.text },
+                        isSelected && styles.dayNumberSelected,
+                      ]}
+                    >
+                      {day}
+                    </Text>
+                    {hasTrials ? (
+                      <View style={styles.dotsRow}>
+                        {cellTrials.slice(0, 3).map((t, dotIdx) => (
+                          <View
+                            key={dotIdx}
+                            style={[
+                              styles.dot,
+                              {
+                                backgroundColor: isSelected
+                                  ? colors.onAccent
+                                  : t.color || getServiceColor(t.serviceName),
+                              },
+                            ]}
+                          />
+                        ))}
+                      </View>
+                    ) : (
+                      <View style={{ height: 4 }} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Selected Date Details */}
+          <View style={styles.detailsHeader}>
+            <Text style={[styles.detailsTitle, { color: colors.text }]}>
+              Due on {formatReadableDate(selectedDateStr)}
             </Text>
+            <View
+              style={[
+                styles.detailsBadge,
+                { backgroundColor: isDark ? colors.surface2 : '#E8F8EE' },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.detailsBadgeText,
+                  { color: isDark ? colors.primary : colors.primaryStrong },
+                ]}
+              >
+                {selectedTrials.length} {selectedTrials.length === 1 ? 'trial' : 'trials'}
+              </Text>
+            </View>
           </View>
-        ) : (
-          selectedTrials.map((t) => <TrialCard key={t.id} trial={t} />)
-        )}
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
+          {selectedTrials.length === 0 ? (
+            <View
+              style={[
+                styles.emptyCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Ionicons name="calendar-outline" size={36} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                Walang trial na matatapos sa araw na ito.
+              </Text>
+            </View>
+          ) : (
+            selectedTrials.map((t) => <TrialCard key={t.id} trial={t} />)
+          )}
+
+          {/* 110dp clearance for raised bottom tab bar */}
+          <View style={{ height: 110 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
+  },
+  header: {
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+    letterSpacing: -0.4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
+    fontFamily: 'Manrope_400Regular',
+    marginTop: 2,
   },
   calendarCard: {
     borderRadius: 20,
@@ -224,26 +328,28 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   navButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   monthTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: -0.2,
   },
   todayBtn: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   todayBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   weekRow: {
     flexDirection: 'row',
@@ -253,8 +359,9 @@ const styles = StyleSheet.create({
   weekLabel: {
     width: 40,
     textAlign: 'center',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   daysGrid: {
     flexDirection: 'row',
@@ -262,37 +369,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dayCell: {
-    width: 40,
-    height: 44,
+    width: 42,
+    height: 46,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
     marginVertical: 2,
   },
   dayCellSelected: {
-    shadowColor: '#00C06A',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
   dayNumber: {
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   dayNumberSelected: {
     fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
   },
   dotsRow: {
     flexDirection: 'row',
-    gap: 2,
+    gap: 3,
     marginTop: 2,
-    height: 4,
+    height: 5,
+    alignItems: 'center',
   },
   dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   detailsHeader: {
     flexDirection: 'row',
@@ -302,28 +412,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   detailsTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   detailsBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 9999,
   },
   detailsBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   emptyCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 24,
+    padding: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
   },
   emptyText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: 'Manrope_400Regular',
+    textAlign: 'center',
   },
 });

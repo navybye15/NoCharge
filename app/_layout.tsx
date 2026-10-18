@@ -1,14 +1,23 @@
-import { useFonts } from 'expo-font';
+import {
+  useFonts,
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from '@expo-google-fonts/manrope';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { Platform, LogBox } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { reconcileRemindersOnLaunch } from '../services/storage';
 import { ThemeProvider as AppThemeProvider, useAppTheme } from '../context/ThemeContext';
+
+LogBox.ignoreAllLogs();
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -19,7 +28,7 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -32,12 +41,22 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
   });
 
   useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
+    if (loaded) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
   }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
     <AppThemeProvider>
@@ -79,12 +98,12 @@ function RootLayoutNav() {
 
   return (
     <>
-      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.background} />
+      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.bg} />
       <Stack
         screenOptions={{
-          contentStyle: { backgroundColor: colors.background },
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.textPrimary,
+          contentStyle: { backgroundColor: colors.bg },
+          headerStyle: { backgroundColor: colors.bg },
+          headerTintColor: colors.text,
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

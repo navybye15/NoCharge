@@ -1,6 +1,14 @@
 // ============================================
-// NoCharge Cashtra Accounts-Style Trials Screen
+// NoCharge Trials Screen (Tab 2) — DESIGN.md
 // ============================================
+// Specs:
+// - LinearGradient background from --bg-gradient-start to --bg-gradient-end
+// - H1 title with muted subtitle
+// - Filter tabs: All, Ending soon, Cancelled (40dp height, fully rounded pill,
+//   filled with --primary when active with --on-primary (#091B27) text)
+// - Full-width vertical list of the SAME TrialCard
+// - No floating action button (+ button is exclusively in center tab bar)
+// - Bottom padding 110dp to clear the raised center button
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -13,18 +21,16 @@ import {
   SafeAreaView,
   TextInput,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import LinearGradient from '../../components/LinearGradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Trial, getDaysLeft, formatCurrency } from '../../types/trial';
 import { getTrials, deleteTrial, subscribeToTrials } from '../../services/storage';
 import { useAppTheme } from '../../context/ThemeContext';
 import TrialCard from '../../components/TrialCard';
-import FloatingAddButton from '../../components/FloatingAddButton';
 
-type FilterType = 'all' | 'ending_soon' | 'cancelled' | 'kept';
+type FilterType = 'all' | 'ending_soon' | 'cancelled';
 
 export default function TrialsScreen() {
-  const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const [trials, setTrials] = useState<Trial[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
@@ -70,9 +76,6 @@ export default function TrialsScreen() {
     if (filter === 'cancelled') {
       return t.status === 'cancelled';
     }
-    if (filter === 'kept') {
-      return t.status === 'kept';
-    }
     if (filter === 'ending_soon') {
       const days = getDaysLeft(t.endDate);
       return t.status === 'active' && days >= 0 && days <= 7;
@@ -85,156 +88,197 @@ export default function TrialsScreen() {
   });
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
-            />
-          }
-        >
-          {/* Header Row */}
-          <View style={styles.cashtraHeader}>
-            <View style={styles.headerTitleCol}>
-              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Trials</Text>
-              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-                Track charge dates and cancel on time.
-              </Text>
-            </View>
+    <LinearGradient
+      colors={[colors.bgGradientStart, colors.bgGradientEnd]}
+      style={styles.gradient}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+              />
+            }
+          >
+            {/* Header Row */}
+            <View style={styles.header}>
+              <View style={styles.headerTitleCol}>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Trials</Text>
+                <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+                  Track charge dates and cancel on time.
+                </Text>
+              </View>
 
-            <View style={styles.headerActionsRow}>
               <TouchableOpacity
-                style={[styles.headerIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                style={[
+                  styles.searchToggleBtn,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
                 onPress={() => setShowSearch(!showSearch)}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Toggle search"
               >
-                <Ionicons name="search-outline" size={18} color={colors.textPrimary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.headerIconBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}
-                onPress={() => router.push('/trials/add')}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add" size={20} color="#FFFFFF" />
+                <Ionicons name="search-outline" size={18} color={colors.text} />
               </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Search Bar Input */}
-          {showSearch ? (
-            <View style={[styles.searchBarWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="search-outline" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
-              <TextInput
-                style={[styles.searchInput, { color: colors.textPrimary }]}
-                placeholder="Search trial or payment card..."
-                placeholderTextColor={colors.textMuted}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoFocus
-              />
-              {searchQuery ? (
-                <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
-                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          ) : null}
-
-          {/* Cashtra Total Balance Card */}
-          <View style={[styles.totalBalanceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.totalBalanceIconWrapper, { backgroundColor: colors.iconContainer, borderColor: colors.borderLight }]}>
-              <Ionicons name="card-outline" size={22} color={colors.iconColor} />
-            </View>
-            <View style={styles.totalBalanceTextCol}>
-              <Text style={[styles.totalBalanceLabel, { color: colors.textSecondary }]}>Active Plans Total</Text>
-              <Text style={[styles.totalBalanceAmount, { color: colors.textPrimary }]}>{formatCurrency(totalActivePrice)}</Text>
-            </View>
-            <View style={[styles.totalBadge, { backgroundColor: colors.primaryLight }]}>
-              <Text style={[styles.totalBadgeText, { color: colors.primary }]}>{activeTrials.length} active</Text>
-            </View>
-          </View>
-
-          {/* Filter Pills */}
-          <View style={styles.filterSection}>
-            <Text style={[styles.filterSectionLabel, { color: colors.textMuted }]}>FILTER</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterScroll}
-            >
-              {[
-                { key: 'all', label: `All (${trials.length})` },
-                { key: 'ending_soon', label: 'Ending soon' },
-                { key: 'cancelled', label: 'Cancelled' },
-                { key: 'kept', label: 'Kept' },
-              ].map((tab) => {
-                const isActive = filter === tab.key;
-                return (
-                  <TouchableOpacity
-                    key={tab.key}
-                    style={[
-                      styles.filterPill,
-                      {
-                        backgroundColor: isActive
-                          ? colors.primary
-                          : isDark
-                          ? colors.surfaceElevated
-                          : colors.surface,
-                        borderColor: isActive ? colors.primary : colors.border,
-                      },
-                    ]}
-                    onPress={() => setFilter(tab.key as FilterType)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.filterPillText,
-                        { color: isActive ? '#FFFFFF' : colors.textSecondary },
-                      ]}
-                    >
-                      {tab.label}
-                    </Text>
+            {/* Search Bar Input */}
+            {showSearch ? (
+              <View
+                style={[
+                  styles.searchBarWrapper,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+              >
+                <Ionicons
+                  name="search-outline"
+                  size={16}
+                  color={colors.textMuted}
+                  style={{ marginRight: 8 }}
+                />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder="Search trial or payment card..."
+                  placeholderTextColor={colors.textMuted}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoFocus
+                />
+                {searchQuery ? (
+                  <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
+                    <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                   </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
+                ) : null}
+              </View>
+            ) : null}
 
-          {/* Cards List */}
-          {sortedTrials.length === 0 ? (
-            <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="filter-outline" size={38} color={colors.textMuted} />
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No trials found</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                {searchQuery ? 'Subukan ang ibang search query.' : 'Walang trial sa napiling filter.'}
-              </Text>
+            {/* Active Plans Summary Card */}
+            <View
+              style={[
+                styles.summaryCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <View
+                style={[
+                  styles.summaryIconWrapper,
+                  { backgroundColor: isDark ? colors.surface2 : '#E8F8EE' },
+                ]}
+              >
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={22}
+                  color={isDark ? colors.primary : colors.primaryStrong}
+                />
+              </View>
+              <View style={styles.summaryTextCol}>
+                <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>
+                  ESTIMATED ACTIVE CHARGE
+                </Text>
+                <Text style={[styles.summaryAmount, { color: colors.text }]}>
+                  {formatCurrency(totalActivePrice)}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.countBadge,
+                  { backgroundColor: isDark ? colors.surface2 : '#E8F8EE' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.countBadgeText,
+                    { color: isDark ? colors.primary : colors.primaryStrong },
+                  ]}
+                >
+                  {activeTrials.length} active
+                </Text>
+              </View>
             </View>
-          ) : (
-            sortedTrials.map((trial) => (
-              <TrialCard
-                key={trial.id}
-                trial={trial}
-                onDelete={handleDelete}
-              />
-            ))
-          )}
 
-          <View style={{ height: 95 }} />
-        </ScrollView>
+            {/* Filter Tabs (40dp height, fully rounded, primary fill with on-primary text) */}
+            <View style={styles.filterSection}>
+              <View style={styles.filterTabsRow}>
+                {[
+                  { key: 'all', label: `All (${trials.length})` },
+                  { key: 'ending_soon', label: 'Ending soon' },
+                  { key: 'cancelled', label: 'Cancelled' },
+                ].map((tab) => {
+                  const isActive = filter === tab.key;
+                  return (
+                    <TouchableOpacity
+                      key={tab.key}
+                      style={[
+                        styles.filterPill,
+                        {
+                          backgroundColor: isActive ? colors.primary : colors.surface,
+                          borderColor: isActive ? colors.primary : colors.border,
+                        },
+                      ]}
+                      onPress={() => setFilter(tab.key as FilterType)}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
+                    >
+                      <Text
+                        style={[
+                          styles.filterPillText,
+                          { color: isActive ? colors.onPrimary : colors.textMuted },
+                        ]}
+                      >
+                        {tab.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
 
-        <FloatingAddButton />
-      </View>
-    </SafeAreaView>
+            {/* Vertical List of Trial Cards */}
+            {sortedTrials.length === 0 ? (
+              <View
+                style={[
+                  styles.emptyCard,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+              >
+                <Ionicons name="folder-open-outline" size={40} color={colors.textMuted} />
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>No trials found</Text>
+                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                  {searchQuery
+                    ? 'Subukan ang ibang search keyword.'
+                    : 'Wala pang trials sa filter na ito. Tap + sa baba para mag-add.'}
+                </Text>
+              </View>
+            ) : (
+              sortedTrials.map((trial) => (
+                <TrialCard key={trial.id} trial={trial} onDelete={handleDelete} />
+              ))
+            )}
+
+            {/* Bottom spacer to clear the 64dp tab bar + 24dp raised button overhang */}
+            <View style={{ height: 110 }} />
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
   },
@@ -243,9 +287,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 16,
   },
-  cashtraHeader: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -253,27 +297,25 @@ const styles = StyleSheet.create({
   },
   headerTitleCol: {
     flex: 1,
-    paddingRight: 10,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: -0.4,
   },
   headerSubtitle: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
+    fontFamily: 'Manrope_400Regular',
     marginTop: 2,
   },
-  headerActionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+  searchToggleBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -284,94 +326,99 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 14,
-    height: 44,
+    height: 52,
     marginBottom: 14,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   clearBtn: {
-    padding: 4,
+    padding: 6,
   },
-  totalBalanceCard: {
+  summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
     marginBottom: 16,
   },
-  totalBalanceIconWrapper: {
+  summaryIconWrapper: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  totalBalanceTextCol: {
+  summaryTextCol: {
     flex: 1,
   },
-  totalBalanceLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  totalBalanceAmount: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-  },
-  totalBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 9999,
-  },
-  totalBadgeText: {
+  summaryLabel: {
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  summaryAmount: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
+    letterSpacing: -0.4,
+  },
+  countBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9999,
+  },
+  countBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   filterSection: {
     marginBottom: 16,
   },
-  filterSectionLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  filterScroll: {
+  filterTabsRow: {
+    flexDirection: 'row',
     gap: 8,
   },
   filterPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    height: 40,
+    paddingHorizontal: 16,
     borderRadius: 9999,
     borderWidth: 1,
-  },
-  filterPillText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  emptyCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+  },
+  filterPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
+  },
+  emptyCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    marginTop: 10,
+    fontFamily: 'Manrope_700Bold',
+    marginTop: 12,
     marginBottom: 6,
   },
   emptySubtitle: {
-    fontSize: 13,
+    fontSize: 14,
+    fontFamily: 'Manrope_400Regular',
     textAlign: 'center',
+    lineHeight: 20,
   },
 });

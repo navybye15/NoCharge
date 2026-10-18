@@ -1,195 +1,161 @@
 // ============================================
-// NoCharge Design System (Cashtra Fintech Edition)
+// NoCharge Design System — DESIGN.md Specification
 // ============================================
-// Supports System Default, Pure Dark (Obsidian + Emerald),
-// and Crisp Light (Sage + Forest) inspired by Cashtra.
 
 export interface ThemeColors {
-  primary: string;
-  primaryDark: string;
-  primaryLight: string;
-  primaryGlow: string;
-  primarySubtle: string;
-
-  background: string;
-  backgroundAlt: string;
+  bg: string;
+  bgGradientStart: string;
+  bgGradientEnd: string;
   surface: string;
-  surfaceElevated: string;
-  surfaceGlass: string;
-  surfaceSubtle: string;
-
-  // Icons
-  iconContainer: string;
-  iconColor: string;
-  iconContainerMuted: string;
-
-  // Text
-  textPrimary: string;
-  textSecondary: string;
-  textMuted: string;
-  textInverse: string;
-
-  // Status indicators
-  urgent: string;
-  urgentBg: string;
-  warning: string;
-  warningBg: string;
-  safe: string;
-  safeBg: string;
-  cancelled: string;
-  cancelledBg: string;
-  kept: string;
-  keptBg: string;
-
-  // Borders & Dividers
+  surface2: string;
   border: string;
-  borderLight: string;
-  borderFocus: string;
+  text: string;
+  textMuted: string;
+  primary: string;
+  onPrimary: string;
+  primaryStrong: string;
+  accent: string;
+  onAccent: string;
+  danger: string;
 
-  // Tab bar
-  tabBarBg: string;
-  tabBarBorder: string;
-
-  // Palette
+  // Shared Tokens
+  heroStart: string;
+  heroEnd: string;
+  svc: string[];
   palette: string[];
 }
 
-export const darkTheme: ThemeColors = {
-  // Cashtra Emerald Primary
-  primary: '#00C06A',
-  primaryDark: '#008C4D',
-  primaryLight: 'rgba(0, 192, 106, 0.15)',
-  primaryGlow: 'rgba(0, 192, 106, 0.25)',
-  primarySubtle: '#09261B',
-
-  // Obsidian / Slate Dark Backgrounds (Image 1 & 2 inspo)
-  background: '#0B0F12',
-  backgroundAlt: '#10161C',
-  surface: '#131A21',
-  surfaceElevated: '#1A242E',
-  surfaceGlass: 'rgba(19, 26, 33, 0.85)',
-  surfaceSubtle: '#161F27',
-
-  // Monochromatic Theme-tinted Icons (No rainbow, matches green theme)
-  iconContainer: '#0D271D',
-  iconColor: '#00C06A',
-  iconContainerMuted: '#1A242E',
-
-  // High-contrast clean typography
-  textPrimary: '#FFFFFF',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
-  textInverse: '#0B0F12',
-
-  // Status
-  urgent: '#EF4444',
-  urgentBg: '#2D1416',
-  warning: '#F59E0B',
-  warningBg: '#2D2111',
-  safe: '#00C06A',
-  safeBg: '#09261B',
-  cancelled: '#64748B',
-  cancelledBg: '#1A242E',
-  kept: '#38BDF8',
-  keptBg: '#0F2636',
-
-  // Crisp slate borders
-  border: '#1F2C37',
-  borderLight: '#18222B',
-  borderFocus: '#00C06A',
-
-  // Navigation
-  tabBarBg: '#0D1318',
-  tabBarBorder: '#18222B',
-
-  palette: [
-    '#00C06A',
-    '#10B981',
-    '#059669',
-    '#047857',
-    '#022C22',
-  ],
-};
-
 export const lightTheme: ThemeColors = {
-  // Forest Emerald Primary
-  primary: '#059669',
-  primaryDark: '#047857',
-  primaryLight: '#D1FAE5',
-  primaryGlow: '#A7F3D0',
-  primarySubtle: '#ECFDF5',
-
-  // Crisp Mint / Sage Backgrounds
-  background: '#F0FAF5',
-  backgroundAlt: '#F7FCF9',
+  bg: '#F2FAF5',
+  bgGradientStart: '#D9F5E5',
+  bgGradientEnd: '#F7FBF8',
   surface: '#FFFFFF',
-  surfaceElevated: '#FFFFFF',
-  surfaceGlass: 'rgba(255, 255, 255, 0.90)',
-  surfaceSubtle: '#F4FAF6',
+  surface2: '#F1F5F3',
+  border: '#D9D9D9',
+  text: '#091B27',
+  textMuted: '#4F625C',
+  primary: '#32CF7A',
+  onPrimary: '#091B27',
+  primaryStrong: '#0F7A3F',
+  accent: '#FFEB1A',
+  onAccent: '#091B27',
+  danger: '#D92D20',
 
-  // Monochromatic Theme-tinted Icons (Clean Forest Green)
-  iconContainer: '#E6F7EF',
-  iconColor: '#059669',
-  iconContainerMuted: '#F1F5F9',
-
-  // Text
-  textPrimary: '#0B1319',
-  textSecondary: '#4A5B53',
-  textMuted: '#84968D',
-  textInverse: '#FFFFFF',
-
-  // Status
-  urgent: '#DC2626',
-  urgentBg: '#FEE2E2',
-  warning: '#D97706',
-  warningBg: '#FEF3C7',
-  safe: '#059669',
-  safeBg: '#D1FAE5',
-  cancelled: '#64748B',
-  cancelledBg: '#F1F5F9',
-  kept: '#0284C7',
-  keptBg: '#E0F2FE',
-
-  // Borders
-  border: '#E1EDE6',
-  borderLight: '#EDF5F0',
-  borderFocus: '#059669',
-
-  // Navigation
-  tabBarBg: '#FFFFFF',
-  tabBarBorder: '#E1EDE6',
-
-  palette: [
-    '#059669',
-    '#10B981',
-    '#047857',
-    '#065F46',
-    '#064E3B',
-  ],
+  heroStart: '#4EE08F',
+  heroEnd: '#1DB86A',
+  svc: ['#32CF7A', '#2BB8C7', '#FFEB1A', '#FF9F43', '#4C8DFF', '#F472B6'],
+  palette: ['#32CF7A', '#2BB8C7', '#FFEB1A', '#FF9F43', '#4C8DFF', '#F472B6'],
 };
 
-// Fallback / legacy alias
-export const Theme = {
-  colors: lightTheme,
+export const darkTheme: ThemeColors = {
+  bg: '#091B27',
+  bgGradientStart: '#0B3B2A',
+  bgGradientEnd: '#091B27',
+  surface: '#13262E',
+  surface2: '#1B323B',
+  border: '#24383F',
+  text: '#FFFFFF',
+  textMuted: '#A9B8B3',
+  primary: '#32CF7A',
+  onPrimary: '#091B27',
+  primaryStrong: '#32CF7A',
+  accent: '#FFEB1A',
+  onAccent: '#091B27',
+  danger: '#FF6B5E',
+
+  heroStart: '#4EE08F',
+  heroEnd: '#1DB86A',
+  svc: ['#32CF7A', '#2BB8C7', '#FFEB1A', '#FF9F43', '#4C8DFF', '#F472B6'],
+  palette: ['#32CF7A', '#2BB8C7', '#FFEB1A', '#FF9F43', '#4C8DFF', '#F472B6'],
+};
+
+// Spacing & Typography based on DESIGN.md
+export const DesignTokens = {
   spacing: {
+    base: 4,
     xs: 4,
     sm: 8,
-    md: 14,
-    lg: 20,
-    xl: 28,
+    md: 12,
+    lg: 16,
+    xl: 24,
+    xxl: 32,
+    huge: 48,
+    giant: 64,
   },
   radius: {
-    sm: 8,
-    md: 14,
-    lg: 20,
-    xl: 26,
-    pill: 9999,
+    input: 14,
+    btn: 16,
+    card: 20,
+    sheet: 24,
+    full: 9999,
   },
   typography: {
-    hero: { fontSize: 32, fontWeight: '800' as const, letterSpacing: -0.5 },
-    titleLarge: { fontSize: 24, fontWeight: '800' as const, letterSpacing: -0.4 },
-    titleMedium: { fontSize: 18, fontWeight: '700' as const },
-    body: { fontSize: 14, fontWeight: '400' as const },
-    caption: { fontSize: 12, fontWeight: '600' as const },
+    fontFamily: {
+      regular: 'Manrope_400Regular',
+      medium: 'Manrope_500Medium',
+      semiBold: 'Manrope_600SemiBold',
+      bold: 'Manrope_700Bold',
+      extraBold: 'Manrope_800ExtraBold',
+    },
+    displayNumber: {
+      fontSize: 40,
+      lineHeight: 48,
+      fontWeight: '800' as const,
+      fontFamily: 'Manrope_800ExtraBold',
+    },
+    h1: {
+      fontSize: 28,
+      lineHeight: 36,
+      fontWeight: '700' as const,
+      fontFamily: 'Manrope_700Bold',
+    },
+    h2: {
+      fontSize: 22,
+      lineHeight: 30,
+      fontWeight: '700' as const,
+      fontFamily: 'Manrope_700Bold',
+    },
+    h3: {
+      fontSize: 18,
+      lineHeight: 26,
+      fontWeight: '600' as const,
+      fontFamily: 'Manrope_600SemiBold',
+    },
+    body: {
+      fontSize: 16,
+      lineHeight: 24,
+      fontWeight: '500' as const,
+      fontFamily: 'Manrope_500Medium',
+    },
+    small: {
+      fontSize: 14,
+      lineHeight: 20,
+      fontWeight: '400' as const,
+      fontFamily: 'Manrope_400Regular',
+    },
+    caption: {
+      fontSize: 12,
+      lineHeight: 16,
+      fontWeight: '500' as const,
+      fontFamily: 'Manrope_500Medium',
+    },
   },
+};
+
+/**
+ * Returns a deterministic service color from the 6 svc tokens based on string hash
+ */
+export function getServiceColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % lightTheme.svc.length;
+  return lightTheme.svc[index];
+}
+
+// Compatibility alias
+export const Theme = {
+  colors: lightTheme,
+  ...DesignTokens,
 };
