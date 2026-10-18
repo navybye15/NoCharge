@@ -271,25 +271,29 @@ export default function HomeScreen() {
             {/* Split Stats: Active Count vs Monthly Risk (Section 10) */}
             <View style={styles.splitStatRow}>
               <View style={styles.splitBox}>
-                <Text style={styles.splitLabel}>ACTIVE TRIALS</Text>
-                <Text style={styles.splitValue} numberOfLines={1} adjustsFontSizeToFit>
-                  {activeTrials.length} {activeTrials.length === 1 ? 'Trial' : 'Trials'}
-                </Text>
+                <Text style={styles.splitLabel} numberOfLines={1}>ACTIVE TRIALS</Text>
+                <View style={styles.splitValueContainer}>
+                  <Text style={styles.splitValue} numberOfLines={1}>
+                    {activeTrials.length} {activeTrials.length === 1 ? 'Trial' : 'Trials'}
+                  </Text>
+                </View>
               </View>
               <View style={styles.splitDivider} />
               <View style={styles.splitBox}>
-                <Text style={styles.splitLabel}>TOTAL AT RISK</Text>
-                <Text style={styles.splitValueRisk} numberOfLines={1} adjustsFontSizeToFit>
-                  {formatCurrency(totalActiveMonthly)}
+                <Text style={styles.splitLabel} numberOfLines={1}>TOTAL AT RISK</Text>
+                <View style={styles.splitValueContainer}>
+                  <Text style={styles.splitValueRisk} numberOfLines={1}>
+                    {formatCurrency(totalActiveMonthly)}
+                  </Text>
                   <Text style={styles.splitValueUnit}>/mo</Text>
-                </Text>
+                </View>
               </View>
             </View>
           </LinearGradient>
 
           {/* Home Trial Carousel: "My Trials" Section */}
           <View style={styles.sectionHeader}>
-            <View>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>My Trials</Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
                 Ending soonest shown first
@@ -666,44 +670,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(9, 27, 39, 0.12)',
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
   },
   splitBox: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
   splitDivider: {
     width: 1,
-    height: 26,
-    backgroundColor: 'rgba(9, 27, 39, 0.15)',
+    height: 28,
+    backgroundColor: 'rgba(9, 27, 39, 0.16)',
   },
   splitLabel: {
     fontSize: 10,
     fontWeight: '800',
     color: '#091B27',
-    opacity: 0.7,
-    letterSpacing: 0.5,
+    opacity: 0.72,
+    letterSpacing: 0.6,
     fontFamily: 'Manrope_700Bold',
-    marginBottom: 3,
+    textAlign: 'center',
+    marginBottom: 4,
+    includeFontPadding: false,
+  },
+  splitValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
   },
   splitValue: {
     fontSize: 16,
     fontWeight: '800',
     color: '#091B27',
     fontFamily: 'Manrope_800ExtraBold',
+    includeFontPadding: false,
   },
   splitValueRisk: {
     fontSize: 16,
     fontWeight: '800',
     color: '#091B27',
     fontFamily: 'Manrope_800ExtraBold',
+    includeFontPadding: false,
   },
   splitValueUnit: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#091B27',
     opacity: 0.8,
+    fontFamily: 'Manrope_700Bold',
+    marginLeft: 2,
+    includeFontPadding: false,
   },
   sectionHeader: {
     flexDirection: 'row',

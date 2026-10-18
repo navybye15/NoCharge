@@ -184,7 +184,7 @@ export default function TrialCard({ trial, cardWidth, onPress, onDelete }: Trial
 
         {trial.paymentLabel ? (
           <View style={styles.paymentCol}>
-            <Text style={[styles.bottomLabel, { color: colors.textMuted }]}>PAYMENT</Text>
+            <Text style={[styles.bottomLabel, { color: colors.textMuted }]}>PAYMENT </Text>
             <Text style={[styles.bottomValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
               {trial.paymentLabel}
             </Text>
@@ -294,17 +294,22 @@ const styles = StyleSheet.create({
   paymentCol: {
     flex: 1,
     alignItems: 'flex-end',
+    paddingRight: 4,
   },
   bottomLabel: {
     fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
     marginBottom: 2,
     fontFamily: 'Manrope_700Bold',
+    includeFontPadding: false,
+    paddingRight: 4,
   },
   bottomValue: {
     fontSize: 13,
     fontWeight: '600',
     fontFamily: 'Manrope_600SemiBold',
+    includeFontPadding: false,
+    paddingRight: 2,
   },
 });
