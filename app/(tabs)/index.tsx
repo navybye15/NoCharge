@@ -160,10 +160,15 @@ export default function HomeScreen() {
   const topInset = Math.max(insets.top, StatusBar.currentHeight || 0, 16) + 12;
 
   return (
-    <LinearGradient
-      colors={[colors.bgGradientStart, colors.bgGradientEnd]}
-      style={styles.gradientContainer}
-    >
+    <View style={[styles.rootContainer, { backgroundColor: colors.bg }]}>
+      {/* Apple-grade Top Gradient Wash Header (Height 340dp) */}
+      <LinearGradient
+        colors={[colors.bgGradientStart, colors.bg]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.topBackdropGradient}
+      />
+
       <View style={[styles.container, { paddingTop: topInset }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -177,9 +182,17 @@ export default function HomeScreen() {
             />
           }
         >
-          {/* Top Bar: Squircle Logo + User/Brand Capsule & Frosted Bell (Image 5 style) */}
+          {/* Top Bar: Frosted Glass Capsule & Frosted Bell */}
           <View style={styles.topBar}>
-            <View style={styles.brandRow}>
+            <View
+              style={[
+                styles.brandCapsule,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.72)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
+                },
+              ]}
+            >
               <View style={[styles.logoSquircle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Image
                   source={require('../../assets/images/logo.png')}
@@ -191,18 +204,18 @@ export default function HomeScreen() {
               <View>
                 <Text style={[styles.brandTitle, { color: colors.text }]}>NoCharge</Text>
                 <Text style={[styles.brandSubtitle, { color: colors.textMuted }]}>
-                  Smart Free Trial Tracker
+                  Trial Tracker
                 </Text>
               </View>
             </View>
 
-            {/* Glass Pill Bell Button */}
+            {/* Frosted Glass Bell Button */}
             <TouchableOpacity
               style={[
                 styles.glassPill,
                 {
-                  backgroundColor: isDark ? 'rgba(19, 38, 46, 0.75)' : 'rgba(255, 255, 255, 0.85)',
-                  borderColor: colors.border,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.72)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                 },
               ]}
               onPress={() => router.push('/notification-result')}
@@ -221,15 +234,18 @@ export default function HomeScreen() {
           <LinearGradient
             colors={[colors.heroStart, colors.heroEnd]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            end={{ x: 1, y: 0 }}
             style={styles.heroCard}
           >
+            {/* Luminous Apple-Style Glowing Radial Aura (Image 5) */}
+            <View style={styles.heroGlowHalo} pointerEvents="none" />
+
             <View style={styles.heroTopRow}>
               <View style={styles.heroTextCol}>
                 <View style={styles.heroTagBadge}>
                   <Ionicons name="flash" size={12} color="#091B27" style={{ marginRight: 4 }} />
                   <Text style={styles.heroTagText}>
-                    {nearestTrial ? 'NEXT TO CHARGE' : 'ALL TRIALS SAFE'}
+                    {nearestTrial ? 'NEXT DUE' : 'ALL SAFE'}
                   </Text>
                 </View>
                 <Text
@@ -486,13 +502,21 @@ export default function HomeScreen() {
           <View style={{ height: 110 }} />
         </ScrollView>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
+  rootContainer: {
     flex: 1,
+    position: 'relative',
+  },
+  topBackdropGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 340,
   },
   container: {
     flex: 1,
@@ -507,14 +531,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  brandRow: {
+  brandCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 24,
+    borderWidth: 1,
+    gap: 10,
   },
   logoSquircle: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
@@ -522,20 +550,19 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logoImage: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
   },
   brandTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     fontFamily: 'Manrope_800ExtraBold',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   brandSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     fontFamily: 'Manrope_500Medium',
-    marginTop: 1,
   },
   glassPill: {
     width: 44,
@@ -555,14 +582,26 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   heroCard: {
-    borderRadius: 22,
+    borderRadius: 24,
     padding: 20,
     marginBottom: 20,
+    position: 'relative',
+    overflow: 'hidden',
     shadowColor: '#1DB86A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  heroGlowHalo: {
+    position: 'absolute',
+    right: -20,
+    top: -20,
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: '#FFE855',
+    opacity: 0.28,
   },
   heroTopRow: {
     flexDirection: 'row',

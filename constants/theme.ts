@@ -26,47 +26,47 @@ export interface ThemeColors {
 }
 
 export const lightTheme: ThemeColors = {
-  bg: '#F2FAF5',
-  bgGradientStart: '#D9F5E5',
-  bgGradientEnd: '#F7FBF8',
+  bg: '#FFFFFF',
+  bgGradientStart: '#6BE05D', // Vibrant fresh Apple spring/lime green
+  bgGradientEnd: '#FFFFFF',
   surface: '#FFFFFF',
-  surface2: '#F1F5F3',
-  border: '#D9D9D9',
-  text: '#091B27',
-  textMuted: '#4F625C',
-  primary: '#32CF7A',
-  onPrimary: '#091B27',
-  primaryStrong: '#0F7A3F',
+  surface2: '#F4F7F5',
+  border: '#E3ECE6',
+  text: '#091A11',
+  textMuted: '#52695E',
+  primary: '#22C55E',
+  onPrimary: '#05180D',
+  primaryStrong: '#0D8040',
   accent: '#FFEB1A',
-  onAccent: '#091B27',
-  danger: '#D92D20',
+  onAccent: '#06190E',
+  danger: '#EF4444',
 
-  heroStart: '#4EE08F',
-  heroEnd: '#1DB86A',
-  svc: ['#32CF7A', '#2BB8C7', '#FFEB1A', '#FF9F43', '#4C8DFF', '#F472B6'],
-  palette: ['#32CF7A', '#2BB8C7', '#FFEB1A', '#FF9F43', '#4C8DFF', '#F472B6'],
+  heroStart: '#3DE682',
+  heroEnd: '#13B85E',
+  svc: ['#22C55E', '#16A34A', '#10B981', '#059669', '#34D399', '#15803D'],
+  palette: ['#22C55E', '#16A34A', '#10B981', '#059669', '#34D399', '#15803D'],
 };
 
 export const darkTheme: ThemeColors = {
-  bg: '#091B27',
-  bgGradientStart: '#0B3B2A',
-  bgGradientEnd: '#091B27',
-  surface: '#13262E',
-  surface2: '#1B323B',
-  border: '#24383F',
+  bg: '#070A0D', // Deep Apple obsidian/black
+  bgGradientStart: '#125633', // Rich Apple dark emerald/forest green
+  bgGradientEnd: '#070A0D', // Pitch midnight
+  surface: '#141D22', // Dark slate rounded cards
+  surface2: '#19242B',
+  border: 'rgba(255, 255, 255, 0.08)',
   text: '#FFFFFF',
-  textMuted: '#A9B8B3',
-  primary: '#32CF7A',
-  onPrimary: '#091B27',
-  primaryStrong: '#32CF7A',
+  textMuted: '#8E9FA8',
+  primary: '#2FD178',
+  onPrimary: '#05180D',
+  primaryStrong: '#2FD178',
   accent: '#FFEB1A',
-  onAccent: '#091B27',
-  danger: '#FF6B5E',
+  onAccent: '#06190E',
+  danger: '#F87171',
 
-  heroStart: '#4EE08F',
-  heroEnd: '#1DB86A',
-  svc: ['#32CF7A', '#2BB8C7', '#FFEB1A', '#FF9F43', '#4C8DFF', '#F472B6'],
-  palette: ['#32CF7A', '#2BB8C7', '#FFEB1A', '#FF9F43', '#4C8DFF', '#F472B6'],
+  heroStart: '#25CE72',
+  heroEnd: '#0D8E48',
+  svc: ['#2FD178', '#20B865', '#16A34A', '#10B981', '#059669', '#34D399'],
+  palette: ['#2FD178', '#20B865', '#16A34A', '#10B981', '#059669', '#34D399'],
 };
 
 // Spacing & Typography based on DESIGN.md

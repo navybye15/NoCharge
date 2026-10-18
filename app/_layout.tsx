@@ -92,7 +92,11 @@ function RootLayoutNav() {
 
   return (
     <>
-      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.bg} />
+      <StatusBar
+        style={isDark ? 'light' : 'dark'}
+        translucent
+        backgroundColor="transparent"
+      />
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: colors.bg },

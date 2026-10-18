@@ -127,10 +127,13 @@ export default function SettingsScreen() {
   const topInset = Math.max(insets.top, StatusBar.currentHeight || 0, 16) + 12;
 
   return (
-    <LinearGradient
-      colors={[colors.bgGradientStart, colors.bgGradientEnd]}
-      style={styles.gradient}
-    >
+    <View style={[styles.rootContainer, { backgroundColor: colors.bg }]}>
+      <LinearGradient
+        colors={[colors.bgGradientStart, colors.bg]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.topBackdropGradient}
+      />
       <View style={[styles.container, { paddingTop: topInset }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -466,13 +469,21 @@ export default function SettingsScreen() {
           <View style={{ height: 110 }} />
         </ScrollView>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
+  rootContainer: {
     flex: 1,
+    position: 'relative',
+  },
+  topBackdropGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 260,
   },
   container: {
     flex: 1,
